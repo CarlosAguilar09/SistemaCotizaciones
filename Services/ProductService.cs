@@ -36,5 +36,10 @@ namespace SistemaCotizaciones.Services
         {
             _productRepo.Delete(id);
         }
+
+        public List<Product> Search(string query, string? type = null)
+        {
+            return _productRepo.Search(query, type);
+        }
     }
 }

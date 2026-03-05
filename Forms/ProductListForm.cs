@@ -6,7 +6,6 @@ namespace SistemaCotizaciones.Forms
     public partial class ProductListForm : Form
     {
         private readonly ProductService _productService = new();
-        private int? _selectedProductId = null;
 
         public ProductListForm()
         {
@@ -21,12 +20,16 @@ namespace SistemaCotizaciones.Forms
         private void LoadProducts()
         {
             string filter = cmbFilter.SelectedItem?.ToString() ?? "Todos";
+            string? type = filter == "Todos" ? null : filter;
+            string search = txtSearch.Text.Trim();
 
             List<Product> products;
-            if (filter == "Todos")
-                products = _productService.GetAll();
+            if (!string.IsNullOrEmpty(search))
+                products = _productService.Search(search, type);
+            else if (type != null)
+                products = _productService.GetByType(type);
             else
-                products = _productService.GetByType(filter);
+                products = _productService.GetAll();
 
             dgvProducts.DataSource = products;
 
@@ -51,54 +54,36 @@ namespace SistemaCotizaciones.Forms
             LoadProducts();
         }
 
-        private void dgvProducts_SelectionChanged(object sender, EventArgs e)
+        private void txtSearch_TextChanged(object sender, EventArgs e)
         {
-            if (dgvProducts.CurrentRow == null || dgvProducts.CurrentRow.Index < 0)
-                return;
-
-            var row = dgvProducts.CurrentRow;
-
-            _selectedProductId = row.Cells["Id"].Value is int id ? id : 0;
-            cmbType.SelectedItem = row.Cells["Type"].Value?.ToString();
-            txtName.Text = row.Cells["Name"].Value?.ToString() ?? string.Empty;
-            txtDescription.Text = row.Cells["Description"].Value?.ToString() ?? string.Empty;
-            nudPrice.Value = row.Cells["Price"].Value is decimal price ? price : 0;
+            LoadProducts();
         }
 
-        private void btnSave_Click(object sender, EventArgs e)
+        private void btnNew_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtName.Text))
+            using var form = new ProductForm();
+            form.ShowDialog(this);
+            LoadProducts();
+        }
+
+        private void btnEdit_Click(object sender, EventArgs e)
+        {
+            if (dgvProducts.CurrentRow == null)
             {
-                MessageBox.Show("El nombre es obligatorio.", "Validación",
+                MessageBox.Show("Seleccione un elemento para editar.", "Validación",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            var product = new Product
-            {
-                Type = cmbType.SelectedItem?.ToString() ?? "Producto",
-                Name = txtName.Text.Trim(),
-                Description = string.IsNullOrWhiteSpace(txtDescription.Text) ? null : txtDescription.Text.Trim(),
-                Price = nudPrice.Value
-            };
-
-            if (_selectedProductId == null)
-            {
-                _productService.Add(product);
-            }
-            else
-            {
-                product.Id = _selectedProductId.Value;
-                _productService.Update(product);
-            }
-
-            ClearFields();
+            int productId = dgvProducts.CurrentRow.Cells["Id"].Value is int id ? id : 0;
+            using var form = new ProductForm(productId);
+            form.ShowDialog(this);
             LoadProducts();
         }
 
         private void btnDelete_Click(object sender, EventArgs e)
         {
-            if (_selectedProductId == null)
+            if (dgvProducts.CurrentRow == null)
             {
                 MessageBox.Show("Seleccione un elemento para eliminar.", "Validación",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -110,25 +95,10 @@ namespace SistemaCotizaciones.Forms
 
             if (result == DialogResult.Yes)
             {
-                _productService.Delete(_selectedProductId.Value);
-                ClearFields();
+                int productId = dgvProducts.CurrentRow.Cells["Id"].Value is int id ? id : 0;
+                _productService.Delete(productId);
                 LoadProducts();
             }
-        }
-
-        private void btnClear_Click(object sender, EventArgs e)
-        {
-            ClearFields();
-        }
-
-        private void ClearFields()
-        {
-            _selectedProductId = null;
-            cmbType.SelectedIndex = 0;
-            txtName.Text = string.Empty;
-            txtDescription.Text = string.Empty;
-            nudPrice.Value = 0;
-            dgvProducts.ClearSelection();
         }
     }
 }

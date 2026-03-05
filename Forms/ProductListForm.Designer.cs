@@ -23,30 +23,19 @@ namespace SistemaCotizaciones.Forms
             this.lblFilter = new Label();
             this.cmbFilter = new ComboBox();
 
+            // Search
+            this.lblSearch = new Label();
+            this.txtSearch = new TextBox();
+
             // DataGridView
             this.dgvProducts = new DataGridView();
 
-            // Input fields
-            this.lblType = new Label();
-            this.cmbType = new ComboBox();
-            this.lblName = new Label();
-            this.txtName = new TextBox();
-            this.lblDescription = new Label();
-            this.txtDescription = new TextBox();
-            this.lblPrice = new Label();
-            this.nudPrice = new NumericUpDown();
-
             // Buttons
-            this.btnSave = new Button();
+            this.btnNew = new Button();
+            this.btnEdit = new Button();
             this.btnDelete = new Button();
-            this.btnClear = new Button();
-
-            // Panel for input fields
-            this.panelInput = new Panel();
 
             ((System.ComponentModel.ISupportInitialize)this.dgvProducts).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)this.nudPrice).BeginInit();
-            this.panelInput.SuspendLayout();
             this.SuspendLayout();
 
             // lblFilter
@@ -59,12 +48,23 @@ namespace SistemaCotizaciones.Forms
             this.cmbFilter.Items.AddRange(new object[] { "Todos", "Producto", "Servicio" });
             this.cmbFilter.SelectedIndex = 0;
             this.cmbFilter.Location = new System.Drawing.Point(90, 12);
-            this.cmbFilter.Size = new System.Drawing.Size(150, 23);
+            this.cmbFilter.Size = new System.Drawing.Size(120, 23);
             this.cmbFilter.SelectedIndexChanged += new EventHandler(this.cmbFilter_SelectedIndexChanged);
+
+            // lblSearch
+            this.lblSearch.Text = "Buscar:";
+            this.lblSearch.Location = new System.Drawing.Point(230, 15);
+            this.lblSearch.AutoSize = true;
+
+            // txtSearch
+            this.txtSearch.Location = new System.Drawing.Point(285, 12);
+            this.txtSearch.Size = new System.Drawing.Size(200, 23);
+            this.txtSearch.PlaceholderText = "Nombre o descripción...";
+            this.txtSearch.TextChanged += new EventHandler(this.txtSearch_TextChanged);
 
             // dgvProducts
             this.dgvProducts.Location = new System.Drawing.Point(12, 45);
-            this.dgvProducts.Size = new System.Drawing.Size(560, 280);
+            this.dgvProducts.Size = new System.Drawing.Size(560, 340);
             this.dgvProducts.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
             this.dgvProducts.ReadOnly = true;
             this.dgvProducts.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
@@ -73,102 +73,45 @@ namespace SistemaCotizaciones.Forms
             this.dgvProducts.AllowUserToDeleteRows = false;
             this.dgvProducts.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             this.dgvProducts.BackgroundColor = System.Drawing.SystemColors.Window;
-            this.dgvProducts.SelectionChanged += new EventHandler(this.dgvProducts_SelectionChanged);
 
-            // panelInput
-            this.panelInput.Location = new System.Drawing.Point(12, 335);
-            this.panelInput.Size = new System.Drawing.Size(560, 140);
-            this.panelInput.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            // btnNew
+            this.btnNew.Text = "Nuevo";
+            this.btnNew.Location = new System.Drawing.Point(12, 395);
+            this.btnNew.Size = new System.Drawing.Size(90, 30);
+            this.btnNew.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            this.btnNew.Click += new EventHandler(this.btnNew_Click);
 
-            // lblType
-            this.lblType.Text = "Tipo:";
-            this.lblType.Location = new System.Drawing.Point(0, 8);
-            this.lblType.AutoSize = true;
-
-            // cmbType
-            this.cmbType.DropDownStyle = ComboBoxStyle.DropDownList;
-            this.cmbType.Items.AddRange(new object[] { "Producto", "Servicio" });
-            this.cmbType.SelectedIndex = 0;
-            this.cmbType.Location = new System.Drawing.Point(85, 5);
-            this.cmbType.Size = new System.Drawing.Size(150, 23);
-
-            // lblName
-            this.lblName.Text = "Nombre:";
-            this.lblName.Location = new System.Drawing.Point(0, 38);
-            this.lblName.AutoSize = true;
-
-            // txtName
-            this.txtName.Location = new System.Drawing.Point(85, 35);
-            this.txtName.Size = new System.Drawing.Size(250, 23);
-
-            // lblDescription
-            this.lblDescription.Text = "Descripción:";
-            this.lblDescription.Location = new System.Drawing.Point(0, 68);
-            this.lblDescription.AutoSize = true;
-
-            // txtDescription
-            this.txtDescription.Location = new System.Drawing.Point(85, 65);
-            this.txtDescription.Size = new System.Drawing.Size(250, 23);
-
-            // lblPrice
-            this.lblPrice.Text = "Precio:";
-            this.lblPrice.Location = new System.Drawing.Point(0, 98);
-            this.lblPrice.AutoSize = true;
-
-            // nudPrice
-            this.nudPrice.Location = new System.Drawing.Point(85, 95);
-            this.nudPrice.Size = new System.Drawing.Size(150, 23);
-            this.nudPrice.DecimalPlaces = 2;
-            this.nudPrice.Maximum = 999999.99m;
-            this.nudPrice.Minimum = 0;
-
-            // btnSave
-            this.btnSave.Text = "Guardar";
-            this.btnSave.Location = new System.Drawing.Point(370, 5);
-            this.btnSave.Size = new System.Drawing.Size(90, 30);
-            this.btnSave.Click += new EventHandler(this.btnSave_Click);
+            // btnEdit
+            this.btnEdit.Text = "Editar";
+            this.btnEdit.Location = new System.Drawing.Point(112, 395);
+            this.btnEdit.Size = new System.Drawing.Size(90, 30);
+            this.btnEdit.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            this.btnEdit.Click += new EventHandler(this.btnEdit_Click);
 
             // btnDelete
             this.btnDelete.Text = "Eliminar";
-            this.btnDelete.Location = new System.Drawing.Point(370, 45);
+            this.btnDelete.Location = new System.Drawing.Point(212, 395);
             this.btnDelete.Size = new System.Drawing.Size(90, 30);
+            this.btnDelete.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             this.btnDelete.Click += new EventHandler(this.btnDelete_Click);
-
-            // btnClear
-            this.btnClear.Text = "Limpiar";
-            this.btnClear.Location = new System.Drawing.Point(370, 85);
-            this.btnClear.Size = new System.Drawing.Size(90, 30);
-            this.btnClear.Click += new EventHandler(this.btnClear_Click);
-
-            // Add controls to panelInput
-            this.panelInput.Controls.Add(this.lblType);
-            this.panelInput.Controls.Add(this.cmbType);
-            this.panelInput.Controls.Add(this.lblName);
-            this.panelInput.Controls.Add(this.txtName);
-            this.panelInput.Controls.Add(this.lblDescription);
-            this.panelInput.Controls.Add(this.txtDescription);
-            this.panelInput.Controls.Add(this.lblPrice);
-            this.panelInput.Controls.Add(this.nudPrice);
-            this.panelInput.Controls.Add(this.btnSave);
-            this.panelInput.Controls.Add(this.btnDelete);
-            this.panelInput.Controls.Add(this.btnClear);
 
             // Form
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(584, 486);
+            this.ClientSize = new System.Drawing.Size(584, 441);
             this.Controls.Add(this.lblFilter);
             this.Controls.Add(this.cmbFilter);
+            this.Controls.Add(this.lblSearch);
+            this.Controls.Add(this.txtSearch);
             this.Controls.Add(this.dgvProducts);
-            this.Controls.Add(this.panelInput);
+            this.Controls.Add(this.btnNew);
+            this.Controls.Add(this.btnEdit);
+            this.Controls.Add(this.btnDelete);
             this.Text = "Productos y Servicios";
             this.StartPosition = FormStartPosition.CenterParent;
-            this.MinimumSize = new System.Drawing.Size(500, 450);
+            this.MinimumSize = new System.Drawing.Size(500, 400);
             this.Load += new EventHandler(this.ProductListForm_Load);
 
             ((System.ComponentModel.ISupportInitialize)this.dgvProducts).EndInit();
-            ((System.ComponentModel.ISupportInitialize)this.nudPrice).EndInit();
-            this.panelInput.ResumeLayout(false);
-            this.panelInput.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
         }
@@ -177,18 +120,11 @@ namespace SistemaCotizaciones.Forms
 
         private Label lblFilter;
         private ComboBox cmbFilter;
+        private Label lblSearch;
+        private TextBox txtSearch;
         private DataGridView dgvProducts;
-        private Panel panelInput;
-        private Label lblType;
-        private ComboBox cmbType;
-        private Label lblName;
-        private TextBox txtName;
-        private Label lblDescription;
-        private TextBox txtDescription;
-        private Label lblPrice;
-        private NumericUpDown nudPrice;
-        private Button btnSave;
+        private Button btnNew;
+        private Button btnEdit;
         private Button btnDelete;
-        private Button btnClear;
     }
 }
