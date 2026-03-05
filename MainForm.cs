@@ -14,5 +14,11 @@ namespace SistemaCotizaciones
             using var form = new ProductListForm();
             form.ShowDialog(this);
         }
+
+        private void btnQuotes_Click(object sender, EventArgs e)
+        {
+            using var form = new QuoteListForm();
+            form.ShowDialog(this);
+        }
     }
 }
