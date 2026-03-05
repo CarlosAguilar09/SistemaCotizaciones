@@ -68,7 +68,6 @@ namespace SistemaCotizaciones.Helpers
 
             panel.Controls.Add(label);
             form.Controls.Add(panel);
-            panel.BringToFront();
 
             return panel;
         }

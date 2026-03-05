@@ -1,3 +1,4 @@
+using System.Text;
 using SistemaCotizaciones.Data;
 using SistemaCotizaciones.Models;
 
@@ -11,6 +12,9 @@ namespace SistemaCotizaciones
         [STAThread]
         static void Main()
         {
+            // Required by PdfSharp on .NET 5+ for encoding 1252
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
             using (var db = new AppDbContext())
             {
                 db.Database.EnsureCreated();

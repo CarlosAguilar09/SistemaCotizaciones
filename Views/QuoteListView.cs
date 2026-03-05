@@ -62,6 +62,14 @@ namespace SistemaCotizaciones.Views
             btnViewDetails.Click += BtnViewDetails_Click;
             btnDelete.Click += BtnDelete_Click;
 
+            // Back button (right-aligned via Dock)
+            var rightPanel = new Panel { Dock = DockStyle.Right, Width = 100, BackColor = AppTheme.Background };
+            var btnBack = new Button { Text = "Volver", Size = new Size(80, 32), Location = new Point(8, 9) };
+            AppTheme.StyleSecondaryButton(btnBack);
+            btnBack.Click += (s, e) => _navigator.GoBack();
+            rightPanel.Controls.Add(btnBack);
+
+            buttonBar.Controls.Add(rightPanel);
             buttonBar.Controls.AddRange(new Control[] { btnNew, btnEdit, btnViewDetails, btnDelete });
 
             Controls.Add(dgvQuotes);

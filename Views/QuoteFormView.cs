@@ -39,7 +39,7 @@ namespace SistemaCotizaciones.Views
             var topPanel = new Panel
             {
                 Dock = DockStyle.Top,
-                Height = 75,
+                Height = 90,
                 BackColor = AppTheme.Surface,
                 Padding = new Padding(12, 8, 12, 8)
             };
@@ -57,8 +57,8 @@ namespace SistemaCotizaciones.Views
                 Value = DateTime.Today
             };
 
-            var lblNotes = new Label { Text = "Notas:", AutoSize = true, Location = new Point(12, 42) };
-            txtNotes = new TextBox { Location = new Point(85, 39), Size = new Size(545, 23) };
+            var lblNotes = new Label { Text = "Notas:", AutoSize = true, Location = new Point(12, 50) };
+            txtNotes = new TextBox { Location = new Point(85, 47), Size = new Size(545, 23) };
             AppTheme.StyleTextBox(txtNotes);
 
             topPanel.Controls.AddRange(new Control[] { lblClientName, txtClientName, lblDate, dtpDate, lblNotes, txtNotes });
@@ -68,7 +68,7 @@ namespace SistemaCotizaciones.Views
             {
                 Text = "Agregar Item",
                 Dock = DockStyle.Top,
-                Height = 75,
+                Height = 95,
                 Padding = new Padding(8)
             };
             AppTheme.StyleGroupBox(grpAddItem);
@@ -108,7 +108,7 @@ namespace SistemaCotizaciones.Views
             nudQuantity = new NumericUpDown
             {
                 Location = new Point(80, 49),
-                Size = new Size(80, 23),
+                Size = new Size(100, 23),
                 Minimum = 1,
                 Maximum = 99999,
                 Value = 1
@@ -133,32 +133,37 @@ namespace SistemaCotizaciones.Views
                 Padding = new Padding(12, 8, 12, 8)
             };
 
-            var btnRemoveItem = new Button { Text = "Quitar Seleccionado", Size = new Size(150, 32), Location = new Point(12, 9) };
+            // Left section — remove button
+            var btnRemoveItem = new Button { Text = "Quitar Seleccionado", Size = new Size(150, 32), Location = new Point(0, 1) };
             AppTheme.StyleSecondaryButton(btnRemoveItem);
             btnRemoveItem.Click += BtnRemoveItem_Click;
+
+            var leftPanel = new Panel { Dock = DockStyle.Left, Width = 165, BackColor = AppTheme.Background };
+            leftPanel.Controls.Add(btnRemoveItem);
+
+            // Right section — total, save, back (using Dock=Right sub-panel)
+            var rightPanel = new Panel { Dock = DockStyle.Right, Width = 380, BackColor = AppTheme.Background };
 
             lblTotal = new Label
             {
                 AutoSize = true,
-                Location = new Point(350, 12),
+                Location = new Point(0, 4),
                 Text = "Total: $0.00"
             };
             AppTheme.StyleTotalLabel(lblTotal);
 
-            var btnSave = new Button { Text = "Guardar", Size = new Size(110, 32), Location = new Point(480, 9) };
+            var btnSave = new Button { Text = "Guardar", Size = new Size(110, 32), Location = new Point(170, 1) };
             AppTheme.StylePrimaryButton(btnSave);
             btnSave.Click += BtnSave_Click;
 
-            var btnBack = new Button { Text = "Volver", Size = new Size(80, 32), Location = new Point(600, 9) };
+            var btnBack = new Button { Text = "Volver", Size = new Size(80, 32), Location = new Point(290, 1) };
             AppTheme.StyleSecondaryButton(btnBack);
             btnBack.Click += (s, e) => _navigator.GoBack();
 
-            // Anchor total and buttons to right
-            lblTotal.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnSave.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnBack.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            rightPanel.Controls.AddRange(new Control[] { lblTotal, btnSave, btnBack });
 
-            bottomBar.Controls.AddRange(new Control[] { btnRemoveItem, lblTotal, btnSave, btnBack });
+            bottomBar.Controls.Add(leftPanel);
+            bottomBar.Controls.Add(rightPanel);
 
             // Items grid
             dgvItems = new DataGridView
