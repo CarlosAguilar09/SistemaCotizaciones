@@ -1,3 +1,5 @@
+using SistemaCotizaciones.Data;
+
 namespace SistemaCotizaciones
 {
     internal static class Program
@@ -8,8 +10,11 @@ namespace SistemaCotizaciones
         [STAThread]
         static void Main()
         {
-            // To customize application configuration such as set high DPI settings or default font,
-            // see https://aka.ms/applicationconfiguration.
+            using (var db = new AppDbContext())
+            {
+                db.Database.EnsureCreated();
+            }
+
             ApplicationConfiguration.Initialize();
             Application.Run(new Form1());
         }
