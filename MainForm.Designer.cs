@@ -1,6 +1,6 @@
 ﻿namespace SistemaCotizaciones
 {
-    partial class Form1
+    partial class MainForm
     {
         /// <summary>
         ///  Required designer variable.
@@ -28,12 +28,28 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.btnProducts = new Button();
             this.components = new System.ComponentModel.Container();
+            this.SuspendLayout();
+
+            // btnProducts
+            this.btnProducts.Text = "Productos y Servicios";
+            this.btnProducts.Location = new System.Drawing.Point(12, 12);
+            this.btnProducts.Size = new System.Drawing.Size(200, 40);
+            this.btnProducts.Click += new EventHandler(this.btnProducts_Click);
+
+            // MainForm
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Text = "Form1";
+            this.Controls.Add(this.btnProducts);
+            this.Text = "Sistema de Cotizaciones";
+            this.StartPosition = FormStartPosition.CenterScreen;
+
+            this.ResumeLayout(false);
         }
 
         #endregion
+
+        private Button btnProducts;
     }
 }
