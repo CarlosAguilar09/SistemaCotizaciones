@@ -1,11 +1,11 @@
 using SistemaCotizaciones.Models;
-using SistemaCotizaciones.Repositories;
+using SistemaCotizaciones.Services;
 
 namespace SistemaCotizaciones.Forms
 {
     public partial class ProductListForm : Form
     {
-        private readonly ProductRepository _productRepo = new();
+        private readonly ProductService _productService = new();
         private int? _selectedProductId = null;
 
         public ProductListForm()
@@ -24,9 +24,9 @@ namespace SistemaCotizaciones.Forms
 
             List<Product> products;
             if (filter == "Todos")
-                products = _productRepo.GetAll();
+                products = _productService.GetAll();
             else
-                products = _productRepo.GetByType(filter);
+                products = _productService.GetByType(filter);
 
             dgvProducts.DataSource = products;
 
@@ -84,12 +84,12 @@ namespace SistemaCotizaciones.Forms
 
             if (_selectedProductId == null)
             {
-                _productRepo.Add(product);
+                _productService.Add(product);
             }
             else
             {
                 product.Id = _selectedProductId.Value;
-                _productRepo.Update(product);
+                _productService.Update(product);
             }
 
             ClearFields();
@@ -110,7 +110,7 @@ namespace SistemaCotizaciones.Forms
 
             if (result == DialogResult.Yes)
             {
-                _productRepo.Delete(_selectedProductId.Value);
+                _productService.Delete(_selectedProductId.Value);
                 ClearFields();
                 LoadProducts();
             }

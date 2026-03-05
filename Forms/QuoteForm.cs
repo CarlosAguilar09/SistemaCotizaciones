@@ -1,13 +1,12 @@
 using SistemaCotizaciones.Models;
-using SistemaCotizaciones.Repositories;
+using SistemaCotizaciones.Services;
 
 namespace SistemaCotizaciones.Forms
 {
     public partial class QuoteForm : Form
     {
-        private readonly ProductRepository _productRepo = new();
-        private readonly QuoteRepository _quoteRepo = new();
-        private readonly QuoteItemRepository _quoteItemRepo = new();
+        private readonly QuoteService _quoteService = new();
+        private readonly QuoteCalculationService _calcService = new();
 
         private readonly int? _quoteId;
         private readonly List<QuoteItem> _items = new();
@@ -20,7 +19,7 @@ namespace SistemaCotizaciones.Forms
 
         private void QuoteForm_Load(object sender, EventArgs e)
         {
-            var products = _productRepo.GetAll();
+            var products = _quoteService.GetAvailableProducts();
             cmbProduct.DisplayMember = "Name";
             cmbProduct.DataSource = products;
 
@@ -29,7 +28,7 @@ namespace SistemaCotizaciones.Forms
             if (_quoteId.HasValue)
             {
                 Text = "Editar Cotización";
-                var quote = _quoteRepo.GetById(_quoteId.Value);
+                var quote = _quoteService.GetById(_quoteId.Value);
                 if (quote != null)
                 {
                     txtClientName.Text = quote.ClientName;
@@ -37,7 +36,7 @@ namespace SistemaCotizaciones.Forms
                     txtNotes.Text = quote.Notes ?? string.Empty;
 
                     // Load existing items with product info
-                    var items = _quoteItemRepo.GetByQuoteId(_quoteId.Value);
+                    var items = _quoteService.GetItemsByQuoteId(_quoteId.Value);
                     foreach (var item in items)
                     {
                         _items.Add(item);
@@ -70,7 +69,7 @@ namespace SistemaCotizaciones.Forms
 
             int quantity = (int)nudQuantity.Value;
             decimal unitPrice = product.Price;
-            decimal subtotal = quantity * unitPrice;
+            decimal subtotal = _calcService.CalculateSubtotal(quantity, unitPrice);
 
             var item = new QuoteItem
             {
@@ -122,63 +121,30 @@ namespace SistemaCotizaciones.Forms
                 return;
             }
 
-            decimal total = _items.Sum(i => i.Subtotal);
+            decimal total = _calcService.CalculateTotal(_items);
 
             if (_quoteId == null)
             {
-                // New quote
                 var quote = new Quote
                 {
                     ClientName = txtClientName.Text.Trim(),
                     Date = dtpDate.Value.Date,
                     Notes = string.IsNullOrWhiteSpace(txtNotes.Text) ? null : txtNotes.Text.Trim(),
-                    Total = total
                 };
 
-                // Prepare items without navigation property to avoid EF tracking issues
-                foreach (var item in _items)
-                {
-                    quote.Items.Add(new QuoteItem
-                    {
-                        ProductId = item.ProductId,
-                        Quantity = item.Quantity,
-                        UnitPrice = item.UnitPrice,
-                        Subtotal = item.Subtotal
-                    });
-                }
-
-                _quoteRepo.Add(quote);
+                _quoteService.SaveQuote(quote, _items);
             }
             else
             {
-                // Edit existing: delete old items, update header, add new items
-                var existingItems = _quoteItemRepo.GetByQuoteId(_quoteId.Value);
-                foreach (var oldItem in existingItems)
-                {
-                    _quoteItemRepo.Delete(oldItem.Id);
-                }
-
                 var quote = new Quote
                 {
                     Id = _quoteId.Value,
                     ClientName = txtClientName.Text.Trim(),
                     Date = dtpDate.Value.Date,
                     Notes = string.IsNullOrWhiteSpace(txtNotes.Text) ? null : txtNotes.Text.Trim(),
-                    Total = total
                 };
-                _quoteRepo.Update(quote);
 
-                foreach (var item in _items)
-                {
-                    _quoteItemRepo.Add(new QuoteItem
-                    {
-                        QuoteId = _quoteId.Value,
-                        ProductId = item.ProductId,
-                        Quantity = item.Quantity,
-                        UnitPrice = item.UnitPrice,
-                        Subtotal = item.Subtotal
-                    });
-                }
+                _quoteService.UpdateQuote(quote, _items);
             }
 
             DialogResult = DialogResult.OK;
@@ -219,7 +185,7 @@ namespace SistemaCotizaciones.Forms
 
         private void RecalculateTotal()
         {
-            decimal total = _items.Sum(i => i.Subtotal);
+            decimal total = _calcService.CalculateTotal(_items);
             lblTotal.Text = $"Total: {total:C2}";
         }
     }

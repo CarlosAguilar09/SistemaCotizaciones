@@ -1,11 +1,10 @@
-using SistemaCotizaciones.Models;
-using SistemaCotizaciones.Repositories;
+using SistemaCotizaciones.Services;
 
 namespace SistemaCotizaciones.Forms
 {
     public partial class QuoteListForm : Form
     {
-        private readonly QuoteRepository _quoteRepo = new();
+        private readonly QuoteService _quoteService = new();
 
         public QuoteListForm()
         {
@@ -19,7 +18,7 @@ namespace SistemaCotizaciones.Forms
 
         private void LoadQuotes()
         {
-            var quotes = _quoteRepo.GetAll();
+            var quotes = _quoteService.GetAll();
             dgvQuotes.DataSource = quotes;
 
             if (dgvQuotes.Columns["Id"] is DataGridViewColumn colId)
@@ -78,7 +77,7 @@ namespace SistemaCotizaciones.Forms
             if (result == DialogResult.Yes)
             {
                 int quoteId = dgvQuotes.CurrentRow.Cells["Id"].Value is int id ? id : 0;
-                _quoteRepo.Delete(quoteId);
+                _quoteService.Delete(quoteId);
                 LoadQuotes();
             }
         }

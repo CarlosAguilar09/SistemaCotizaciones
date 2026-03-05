@@ -45,18 +45,5 @@ namespace SistemaCotizaciones.Repositories
                 db.SaveChanges();
             }
         }
-
-        public void RecalculateTotal(int quoteId)
-        {
-            using var db = new AppDbContext();
-            var quote = db.Quotes.Find(quoteId);
-            if (quote != null)
-            {
-                quote.Total = db.QuoteItems
-                    .Where(i => i.QuoteId == quoteId)
-                    .Sum(i => i.Subtotal);
-                db.SaveChanges();
-            }
-        }
     }
 }
