@@ -74,25 +74,32 @@ namespace SistemaCotizaciones.Views
                 Padding = new Padding(12, 8, 12, 8)
             };
 
-            var btnExportPdf = new Button { Text = "Exportar PDF", Size = new Size(130, 32), Location = new Point(12, 9) };
+            var btnExportPdf = new Button { Text = "Exportar PDF", Size = new Size(130, 32), Location = new Point(0, 1) };
             AppTheme.StylePrimaryButton(btnExportPdf);
             btnExportPdf.Click += BtnExportPdf_Click;
+
+            var leftPanel = new Panel { Dock = DockStyle.Left, Width = 145, BackColor = AppTheme.Background };
+            leftPanel.Controls.Add(btnExportPdf);
+
+            // Right section — total + back (using Dock=Right sub-panel)
+            var rightPanel = new Panel { Dock = DockStyle.Right, Width = 310, BackColor = AppTheme.Background };
 
             lblTotal = new Label
             {
                 AutoSize = true,
-                Location = new Point(400, 12),
+                Location = new Point(0, 4),
                 Text = "Total: $0.00"
             };
             AppTheme.StyleTotalLabel(lblTotal);
-            lblTotal.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
 
-            var btnBack = new Button { Text = "Volver", Size = new Size(90, 32), Location = new Point(560, 9) };
+            var btnBack = new Button { Text = "Volver", Size = new Size(90, 32), Location = new Point(210, 1) };
             AppTheme.StyleSecondaryButton(btnBack);
             btnBack.Click += (s, e) => _navigator.GoBack();
-            btnBack.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
 
-            bottomBar.Controls.AddRange(new Control[] { btnExportPdf, lblTotal, btnBack });
+            rightPanel.Controls.AddRange(new Control[] { lblTotal, btnBack });
+
+            bottomBar.Controls.Add(leftPanel);
+            bottomBar.Controls.Add(rightPanel);
 
             // Items grid
             dgvItems = new DataGridView
