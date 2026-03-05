@@ -62,6 +62,20 @@ namespace SistemaCotizaciones.Forms
             LoadQuotes();
         }
 
+        private void btnViewDetails_Click(object sender, EventArgs e)
+        {
+            if (dgvQuotes.CurrentRow == null)
+            {
+                MessageBox.Show("Seleccione una cotización para ver.", "Validación",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            int quoteId = dgvQuotes.CurrentRow.Cells["Id"].Value is int id ? id : 0;
+            using var form = new QuoteDetailForm(quoteId);
+            form.ShowDialog(this);
+        }
+
         private void btnDeleteQuote_Click(object sender, EventArgs e)
         {
             if (dgvQuotes.CurrentRow == null)

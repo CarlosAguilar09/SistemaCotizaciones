@@ -52,9 +52,17 @@ namespace SistemaCotizaciones.Forms
             this.btnEditQuote.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             this.btnEditQuote.Click += new EventHandler(this.btnEditQuote_Click);
 
+            // btnViewDetails
+            this.btnViewDetails = new Button();
+            this.btnViewDetails.Text = "Ver Detalles";
+            this.btnViewDetails.Location = new System.Drawing.Point(112, 360);
+            this.btnViewDetails.Size = new System.Drawing.Size(110, 30);
+            this.btnViewDetails.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            this.btnViewDetails.Click += new EventHandler(this.btnViewDetails_Click);
+
             // btnDeleteQuote
             this.btnDeleteQuote.Text = "Eliminar";
-            this.btnDeleteQuote.Location = new System.Drawing.Point(112, 360);
+            this.btnDeleteQuote.Location = new System.Drawing.Point(232, 360);
             this.btnDeleteQuote.Size = new System.Drawing.Size(90, 30);
             this.btnDeleteQuote.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             this.btnDeleteQuote.Click += new EventHandler(this.btnDeleteQuote_Click);
@@ -65,6 +73,7 @@ namespace SistemaCotizaciones.Forms
             this.Controls.Add(this.btnNewQuote);
             this.Controls.Add(this.dgvQuotes);
             this.Controls.Add(this.btnEditQuote);
+            this.Controls.Add(this.btnViewDetails);
             this.Controls.Add(this.btnDeleteQuote);
             this.Text = "Cotizaciones";
             this.StartPosition = FormStartPosition.CenterParent;
@@ -80,6 +89,7 @@ namespace SistemaCotizaciones.Forms
         private Button btnNewQuote;
         private DataGridView dgvQuotes;
         private Button btnEditQuote;
+        private Button btnViewDetails;
         private Button btnDeleteQuote;
     }
 }
