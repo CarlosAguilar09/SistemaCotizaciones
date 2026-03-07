@@ -1,0 +1,355 @@
+using SistemaCotizaciones.Helpers;
+using SistemaCotizaciones.Models;
+using SistemaCotizaciones.Services;
+
+namespace SistemaCotizaciones.Views
+{
+    public class MaterialFormView : UserControl
+    {
+        private readonly Navigator _navigator;
+        private readonly MaterialService _materialService = new();
+        private readonly int? _materialId;
+
+        private TextBox txtName = null!;
+        private TextBox txtUnit = null!;
+        private TextBox txtDescription = null!;
+        private TreeView tvVariants = null!;
+
+        private Material _material = new();
+
+        public MaterialFormView(Navigator navigator, int? materialId = null)
+        {
+            _navigator = navigator;
+            _materialId = materialId;
+            Tag = materialId.HasValue ? "Editar Material" : "Nuevo Material";
+            InitializeControls();
+            LoadData();
+        }
+
+        private void InitializeControls()
+        {
+            AppTheme.ApplyTo(this);
+
+            // Top panel — material info
+            var topPanel = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 115,
+                BackColor = AppTheme.Surface,
+                Padding = new Padding(12, 8, 12, 8)
+            };
+
+            int y = 10;
+            var lblName = new Label { Text = "Nombre:", AutoSize = true, Location = new Point(12, y + 3) };
+            txtName = new TextBox { Location = new Point(100, y), Size = new Size(250, 23) };
+            AppTheme.StyleTextBox(txtName);
+
+            y += 30;
+            var lblUnit = new Label { Text = "Unidad:", AutoSize = true, Location = new Point(12, y + 3) };
+            txtUnit = new TextBox { Location = new Point(100, y), Size = new Size(120, 23), PlaceholderText = "m², pieza, rollo..." };
+            AppTheme.StyleTextBox(txtUnit);
+
+            y += 30;
+            var lblDesc = new Label { Text = "Descripción:", AutoSize = true, Location = new Point(12, y + 3) };
+            txtDescription = new TextBox { Location = new Point(100, y), Size = new Size(400, 23) };
+            AppTheme.StyleTextBox(txtDescription);
+
+            topPanel.Controls.AddRange(new Control[] { lblName, txtName, lblUnit, txtUnit, lblDesc, txtDescription });
+
+            // Variant/Option management toolbar
+            var variantToolbar = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 42,
+                BackColor = AppTheme.Background,
+                Padding = new Padding(12, 5, 12, 5)
+            };
+
+            var btnAddVariant = new Button { Text = "+ Variante", Size = new Size(100, 30), Location = new Point(12, 5) };
+            AppTheme.StylePrimaryButton(btnAddVariant);
+            btnAddVariant.Click += BtnAddVariant_Click;
+
+            var btnAddOption = new Button { Text = "+ Opción", Size = new Size(100, 30), Location = new Point(122, 5) };
+            AppTheme.StyleSecondaryButton(btnAddOption);
+            btnAddOption.Click += BtnAddOption_Click;
+
+            var btnRename = new Button { Text = "Renombrar", Size = new Size(100, 30), Location = new Point(232, 5) };
+            AppTheme.StyleSecondaryButton(btnRename);
+            btnRename.Click += BtnRename_Click;
+
+            var btnSetPrice = new Button { Text = "Cambiar Precio", Size = new Size(120, 30), Location = new Point(342, 5) };
+            AppTheme.StyleSecondaryButton(btnSetPrice);
+            btnSetPrice.Click += BtnSetPrice_Click;
+
+            var btnRemove = new Button { Text = "Eliminar", Size = new Size(90, 30), Location = new Point(472, 5) };
+            AppTheme.StyleDangerButton(btnRemove);
+            btnRemove.Click += BtnRemove_Click;
+
+            variantToolbar.Controls.AddRange(new Control[] { btnAddVariant, btnAddOption, btnRename, btnSetPrice, btnRemove });
+
+            // TreeView for variants and options
+            tvVariants = new TreeView
+            {
+                Dock = DockStyle.Fill,
+                Font = AppTheme.DefaultFont,
+                ItemHeight = 26,
+                ShowLines = true,
+                ShowPlusMinus = true,
+                HideSelection = false
+            };
+
+            // Bottom bar
+            var bottomBar = new Panel
+            {
+                Dock = DockStyle.Bottom,
+                Height = 55,
+                BackColor = AppTheme.Background,
+                Padding = new Padding(12, 8, 12, 8)
+            };
+
+            var rightPanel = new Panel { Dock = DockStyle.Right, Width = 220, BackColor = AppTheme.Background };
+
+            var btnSave = new Button { Text = "Guardar", Size = new Size(100, 32), Location = new Point(0, 1) };
+            AppTheme.StylePrimaryButton(btnSave);
+            btnSave.Click += BtnSave_Click;
+
+            var btnBack = new Button { Text = "Volver", Size = new Size(90, 32), Location = new Point(110, 1) };
+            AppTheme.StyleSecondaryButton(btnBack);
+            btnBack.Click += (s, e) => _navigator.GoBack();
+
+            rightPanel.Controls.AddRange(new Control[] { btnSave, btnBack });
+            bottomBar.Controls.Add(rightPanel);
+
+            // Add in correct order for docking
+            Controls.Add(tvVariants);
+            Controls.Add(bottomBar);
+            Controls.Add(variantToolbar);
+            Controls.Add(topPanel);
+        }
+
+        private void LoadData()
+        {
+            if (_materialId.HasValue)
+            {
+                var material = _materialService.GetById(_materialId.Value);
+                if (material != null)
+                {
+                    _material = material;
+                    txtName.Text = material.Name;
+                    txtUnit.Text = material.Unit;
+                    txtDescription.Text = material.Description ?? "";
+                }
+            }
+
+            RebuildTree();
+        }
+
+        private void RebuildTree()
+        {
+            tvVariants.Nodes.Clear();
+
+            foreach (var variant in _material.Variants)
+            {
+                var variantNode = new TreeNode($"📁 {variant.Name}")
+                {
+                    Tag = variant
+                };
+
+                foreach (var option in variant.Options)
+                {
+                    var optionNode = new TreeNode($"💲 {option.Name} — {option.Price:C2}")
+                    {
+                        Tag = option
+                    };
+                    variantNode.Nodes.Add(optionNode);
+                }
+
+                tvVariants.Nodes.Add(variantNode);
+            }
+
+            tvVariants.ExpandAll();
+        }
+
+        private void BtnAddVariant_Click(object? sender, EventArgs e)
+        {
+            var name = PromptInput("Nueva Variante", "Nombre de la variante:");
+            if (string.IsNullOrWhiteSpace(name)) return;
+
+            _material.Variants.Add(new MaterialVariant
+            {
+                Name = name.Trim(),
+                Options = new List<MaterialOption>()
+            });
+
+            RebuildTree();
+        }
+
+        private void BtnAddOption_Click(object? sender, EventArgs e)
+        {
+            var selectedNode = tvVariants.SelectedNode;
+            MaterialVariant? variant = null;
+
+            if (selectedNode?.Tag is MaterialVariant v)
+                variant = v;
+            else if (selectedNode?.Tag is MaterialOption opt)
+                variant = _material.Variants.FirstOrDefault(vr => vr.Options.Contains(opt));
+
+            if (variant == null)
+            {
+                MessageBox.Show("Seleccione una variante donde agregar la opción.", "Validación",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var name = PromptInput("Nueva Opción", "Nombre de la opción:");
+            if (string.IsNullOrWhiteSpace(name)) return;
+
+            var priceStr = PromptInput("Precio", "Precio de la opción:");
+            if (string.IsNullOrWhiteSpace(priceStr) || !decimal.TryParse(priceStr, out var price))
+            {
+                MessageBox.Show("Precio inválido.", "Validación",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            variant.Options.Add(new MaterialOption
+            {
+                Name = name.Trim(),
+                Price = price
+            });
+
+            RebuildTree();
+        }
+
+        private void BtnRename_Click(object? sender, EventArgs e)
+        {
+            var selectedNode = tvVariants.SelectedNode;
+            if (selectedNode == null)
+            {
+                MessageBox.Show("Seleccione un elemento para renombrar.", "Validación",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (selectedNode.Tag is MaterialVariant variant)
+            {
+                var name = PromptInput("Renombrar Variante", "Nuevo nombre:", variant.Name);
+                if (!string.IsNullOrWhiteSpace(name))
+                {
+                    variant.Name = name.Trim();
+                    RebuildTree();
+                }
+            }
+            else if (selectedNode.Tag is MaterialOption option)
+            {
+                var name = PromptInput("Renombrar Opción", "Nuevo nombre:", option.Name);
+                if (!string.IsNullOrWhiteSpace(name))
+                {
+                    option.Name = name.Trim();
+                    RebuildTree();
+                }
+            }
+        }
+
+        private void BtnSetPrice_Click(object? sender, EventArgs e)
+        {
+            var selectedNode = tvVariants.SelectedNode;
+            if (selectedNode?.Tag is not MaterialOption option)
+            {
+                MessageBox.Show("Seleccione una opción para cambiar el precio.", "Validación",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var priceStr = PromptInput("Cambiar Precio", "Nuevo precio:", option.Price.ToString("F2"));
+            if (!string.IsNullOrWhiteSpace(priceStr) && decimal.TryParse(priceStr, out var price))
+            {
+                option.Price = price;
+                RebuildTree();
+            }
+        }
+
+        private void BtnRemove_Click(object? sender, EventArgs e)
+        {
+            var selectedNode = tvVariants.SelectedNode;
+            if (selectedNode == null)
+            {
+                MessageBox.Show("Seleccione un elemento para eliminar.", "Validación",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (selectedNode.Tag is MaterialVariant variant)
+            {
+                var result = MessageBox.Show($"¿Eliminar la variante '{variant.Name}' y todas sus opciones?",
+                    "Confirmar", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (result == DialogResult.Yes)
+                {
+                    _material.Variants.Remove(variant);
+                    RebuildTree();
+                }
+            }
+            else if (selectedNode.Tag is MaterialOption option)
+            {
+                var parentVariant = _material.Variants.FirstOrDefault(v => v.Options.Contains(option));
+                if (parentVariant != null)
+                {
+                    parentVariant.Options.Remove(option);
+                    RebuildTree();
+                }
+            }
+        }
+
+        private void BtnSave_Click(object? sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtName.Text))
+            {
+                MessageBox.Show("El nombre del material es obligatorio.", "Validación",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(txtUnit.Text))
+            {
+                MessageBox.Show("La unidad es obligatoria.", "Validación",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            _material.Name = txtName.Text.Trim();
+            _material.Unit = txtUnit.Text.Trim();
+            _material.Description = string.IsNullOrWhiteSpace(txtDescription.Text) ? null : txtDescription.Text.Trim();
+
+            if (_materialId == null)
+                _materialService.Add(_material);
+            else
+                _materialService.Update(_material);
+
+            _navigator.GoBack();
+        }
+
+        private static string? PromptInput(string title, string label, string defaultValue = "")
+        {
+            using var form = new Form
+            {
+                Text = title,
+                Size = new Size(350, 160),
+                StartPosition = FormStartPosition.CenterParent,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false
+            };
+
+            var lbl = new Label { Text = label, AutoSize = true, Location = new Point(12, 15) };
+            var txt = new TextBox { Location = new Point(12, 40), Size = new Size(300, 23), Text = defaultValue };
+            var btnOk = new Button { Text = "Aceptar", DialogResult = DialogResult.OK, Location = new Point(130, 75), Size = new Size(80, 30) };
+            var btnCancel = new Button { Text = "Cancelar", DialogResult = DialogResult.Cancel, Location = new Point(220, 75), Size = new Size(80, 30) };
+
+            form.Controls.AddRange(new Control[] { lbl, txt, btnOk, btnCancel });
+            form.AcceptButton = btnOk;
+            form.CancelButton = btnCancel;
+
+            return form.ShowDialog() == DialogResult.OK ? txt.Text : null;
+        }
+    }
+}

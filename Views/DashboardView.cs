@@ -6,6 +6,7 @@ namespace SistemaCotizaciones.Views
     {
         private readonly Navigator _navigator;
         private Button btnProducts = null!;
+        private Button btnMaterials = null!;
         private Button btnQuotes = null!;
 
         public DashboardView(Navigator navigator)
@@ -30,11 +31,22 @@ namespace SistemaCotizaciones.Views
                 _navigator.NavigateTo(new ProductListView(_navigator), "Productos y Servicios");
             AppTheme.StyleCardButton(btnProducts, "📦");
 
+            btnMaterials = new Button
+            {
+                Text = "Materiales",
+                Size = new Size(280, 80),
+                Location = new Point(200, 180)
+            };
+            btnMaterials.Anchor = AnchorStyles.None;
+            btnMaterials.Click += (s, e) =>
+                _navigator.NavigateTo(new MaterialListView(_navigator), "Materiales");
+            AppTheme.StyleCardButton(btnMaterials, "🎨");
+
             btnQuotes = new Button
             {
                 Text = "Cotizaciones",
                 Size = new Size(280, 80),
-                Location = new Point(200, 180)
+                Location = new Point(200, 280)
             };
             btnQuotes.Anchor = AnchorStyles.None;
             btnQuotes.Click += (s, e) =>
@@ -42,6 +54,7 @@ namespace SistemaCotizaciones.Views
             AppTheme.StyleCardButton(btnQuotes, "📋");
 
             Controls.Add(btnProducts);
+            Controls.Add(btnMaterials);
             Controls.Add(btnQuotes);
         }
 
@@ -53,14 +66,15 @@ namespace SistemaCotizaciones.Views
 
         private void CenterButtons()
         {
-            if (btnProducts == null || btnQuotes == null) return;
+            if (btnProducts == null || btnMaterials == null || btnQuotes == null) return;
 
-            int totalHeight = btnProducts.Height + 20 + btnQuotes.Height;
+            int totalHeight = btnProducts.Height + 20 + btnMaterials.Height + 20 + btnQuotes.Height;
             int startY = (ClientSize.Height - totalHeight) / 2;
             int centerX = (ClientSize.Width - btnProducts.Width) / 2;
 
             btnProducts.Location = new Point(centerX, startY);
-            btnQuotes.Location = new Point(centerX, startY + btnProducts.Height + 20);
+            btnMaterials.Location = new Point(centerX, startY + btnProducts.Height + 20);
+            btnQuotes.Location = new Point(centerX, startY + btnProducts.Height + 20 + btnMaterials.Height + 20);
         }
     }
 }

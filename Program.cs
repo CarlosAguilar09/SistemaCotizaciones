@@ -15,17 +15,43 @@ namespace SistemaCotizaciones
             // Required by PdfSharp on .NET 5+ for encoding 1252
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
-            using (var db = new AppDbContext())
-            {
-                db.Database.EnsureCreated();
-                SeedData(db);
-            }
+            InitializeDatabase();
 
             ApplicationConfiguration.Initialize();
             Application.Run(new MainForm());
         }
 
+        private static void InitializeDatabase()
+        {
+            var dbPath = GetDatabasePath();
+
+            // Delete existing DB to apply schema changes during development
+            if (File.Exists(dbPath))
+                File.Delete(dbPath);
+
+            using var db = new AppDbContext();
+            db.Database.EnsureCreated();
+            SeedData(db);
+        }
+
+        private static string GetDatabasePath()
+        {
+            var appDataFolder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "CUBOSigns", "SistemaCotizaciones");
+            return Path.Combine(appDataFolder, "cotizaciones.db");
+        }
+
         private static void SeedData(AppDbContext db)
+        {
+            if (!db.Products.Any())
+                SeedProducts(db);
+
+            if (!db.Materials.Any())
+                SeedMaterials(db);
+        }
+
+        private static void SeedProducts(AppDbContext db)
         {
             if (db.Products.Any())
                 return;
@@ -56,6 +82,222 @@ namespace SistemaCotizaciones
             };
 
             db.Products.AddRange(products);
+            db.SaveChanges();
+        }
+
+        private static void SeedMaterials(AppDbContext db)
+        {
+            var materials = new List<Material>
+            {
+                new Material
+                {
+                    Name = "Vinil",
+                    Unit = "m²",
+                    Description = "Vinil adhesivo en diferentes presentaciones",
+                    Variants = new List<MaterialVariant>
+                    {
+                        new MaterialVariant
+                        {
+                            Name = "De impresión",
+                            Options = new List<MaterialOption>
+                            {
+                                new MaterialOption { Name = "Normal", Price = 160m },
+                                new MaterialOption { Name = "c/suaje", Price = 240m },
+                                new MaterialOption { Name = "c/corte", Price = 200m },
+                            }
+                        },
+                        new MaterialVariant
+                        {
+                            Name = "De impresión transparente",
+                            Options = new List<MaterialOption>
+                            {
+                                new MaterialOption { Name = "Normal", Price = 200m },
+                                new MaterialOption { Name = "c/suaje", Price = 280m },
+                            }
+                        },
+                        new MaterialVariant
+                        {
+                            Name = "De corte",
+                            Options = new List<MaterialOption>
+                            {
+                                new MaterialOption { Name = "Básico", Price = 430m },
+                                new MaterialOption { Name = "Metálico", Price = 660m },
+                                new MaterialOption { Name = "Arlon", Price = 700m },
+                                new MaterialOption { Name = "Translúcido", Price = 550m },
+                            }
+                        },
+                        new MaterialVariant
+                        {
+                            Name = "Esmerilado",
+                            Options = new List<MaterialOption>
+                            {
+                                new MaterialOption { Name = "Normal", Price = 300m },
+                                new MaterialOption { Name = "c/impresión", Price = 380m },
+                            }
+                        },
+                        new MaterialVariant
+                        {
+                            Name = "Microperforado",
+                            Options = new List<MaterialOption>
+                            {
+                                new MaterialOption { Name = "Normal", Price = 350m },
+                                new MaterialOption { Name = "c/impresión", Price = 420m },
+                            }
+                        },
+                        new MaterialVariant
+                        {
+                            Name = "Reflectivo",
+                            Options = new List<MaterialOption>
+                            {
+                                new MaterialOption { Name = "Normal", Price = 500m },
+                                new MaterialOption { Name = "c/impresión", Price = 600m },
+                            }
+                        },
+                    }
+                },
+                new Material
+                {
+                    Name = "Lona",
+                    Unit = "m²",
+                    Description = "Lona para impresión en gran formato",
+                    Variants = new List<MaterialVariant>
+                    {
+                        new MaterialVariant
+                        {
+                            Name = "Banner 13oz",
+                            Options = new List<MaterialOption>
+                            {
+                                new MaterialOption { Name = "Normal", Price = 180m },
+                                new MaterialOption { Name = "c/ojillos", Price = 210m },
+                            }
+                        },
+                        new MaterialVariant
+                        {
+                            Name = "Mesh",
+                            Options = new List<MaterialOption>
+                            {
+                                new MaterialOption { Name = "Normal", Price = 220m },
+                                new MaterialOption { Name = "c/ojillos", Price = 250m },
+                            }
+                        },
+                        new MaterialVariant
+                        {
+                            Name = "Blackout",
+                            Options = new List<MaterialOption>
+                            {
+                                new MaterialOption { Name = "Normal", Price = 260m },
+                            }
+                        },
+                    }
+                },
+                new Material
+                {
+                    Name = "Coroplast + vinil",
+                    Unit = "pieza",
+                    Description = "Lámina de coroplast con vinil adherido",
+                    Variants = new List<MaterialVariant>
+                    {
+                        new MaterialVariant
+                        {
+                            Name = "Estándar",
+                            Options = new List<MaterialOption>
+                            {
+                                new MaterialOption { Name = "Normal", Price = 350m },
+                                new MaterialOption { Name = "c/suaje", Price = 420m },
+                            }
+                        },
+                    }
+                },
+                new Material
+                {
+                    Name = "Estireno + vinil",
+                    Unit = "pieza",
+                    Description = "Lámina de estireno con vinil adherido",
+                    Variants = new List<MaterialVariant>
+                    {
+                        new MaterialVariant
+                        {
+                            Name = "Estándar",
+                            Options = new List<MaterialOption>
+                            {
+                                new MaterialOption { Name = "Normal", Price = 400m },
+                            }
+                        },
+                    }
+                },
+                new Material
+                {
+                    Name = "PVC + vinil",
+                    Unit = "pieza",
+                    Description = "Lámina de PVC espumado con vinil adherido",
+                    Variants = new List<MaterialVariant>
+                    {
+                        new MaterialVariant
+                        {
+                            Name = "Estándar",
+                            Options = new List<MaterialOption>
+                            {
+                                new MaterialOption { Name = "Normal", Price = 450m },
+                            }
+                        },
+                    }
+                },
+                new Material
+                {
+                    Name = "Papel fotográfico",
+                    Unit = "m²",
+                    Description = "Papel fotográfico para impresión de alta calidad",
+                    Variants = new List<MaterialVariant>
+                    {
+                        new MaterialVariant
+                        {
+                            Name = "Estándar",
+                            Options = new List<MaterialOption>
+                            {
+                                new MaterialOption { Name = "Normal", Price = 280m },
+                                new MaterialOption { Name = "c/laminado", Price = 340m },
+                            }
+                        },
+                    }
+                },
+                new Material
+                {
+                    Name = "Imán",
+                    Unit = "pieza",
+                    Description = "Imán impreso para vehículo o uso comercial",
+                    Variants = new List<MaterialVariant>
+                    {
+                        new MaterialVariant
+                        {
+                            Name = "Estándar",
+                            Options = new List<MaterialOption>
+                            {
+                                new MaterialOption { Name = "Normal", Price = 500m },
+                            }
+                        },
+                    }
+                },
+                new Material
+                {
+                    Name = "Canvas",
+                    Unit = "m²",
+                    Description = "Tela canvas para impresión artística",
+                    Variants = new List<MaterialVariant>
+                    {
+                        new MaterialVariant
+                        {
+                            Name = "Estándar",
+                            Options = new List<MaterialOption>
+                            {
+                                new MaterialOption { Name = "Normal", Price = 400m },
+                                new MaterialOption { Name = "c/bastidor", Price = 550m },
+                            }
+                        },
+                    }
+                },
+            };
+
+            db.Materials.AddRange(materials);
             db.SaveChanges();
         }
     }

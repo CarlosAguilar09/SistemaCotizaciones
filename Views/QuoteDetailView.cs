@@ -144,16 +144,16 @@ namespace SistemaCotizaciones.Views
         {
             var displayItems = _items.Select(i => new
             {
-                Producto = i.Product?.Name ?? $"(ID: {i.ProductId})",
-                Cantidad = i.Quantity,
+                Descripción = i.Description,
+                Cantidad = i.Quantity % 1 == 0 ? i.Quantity.ToString("0") : i.Quantity.ToString("0.##"),
                 PrecioUnitario = i.UnitPrice,
                 Subtotal = i.Subtotal
             }).ToList();
 
             dgvItems.DataSource = displayItems;
 
-            if (dgvItems.Columns["Producto"] is DataGridViewColumn colProd)
-                colProd.HeaderText = "Producto / Servicio";
+            if (dgvItems.Columns["Descripción"] is DataGridViewColumn colDesc)
+                colDesc.HeaderText = "Descripción";
             if (dgvItems.Columns["Cantidad"] is DataGridViewColumn colQty)
                 colQty.HeaderText = "Cantidad";
             if (dgvItems.Columns["PrecioUnitario"] is DataGridViewColumn colPrice)

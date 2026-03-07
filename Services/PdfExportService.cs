@@ -150,8 +150,8 @@ namespace SistemaCotizaciones.Services
                     row.Shading.Color = new MigraDocColor(245, 245, 245);
 
                 row.Cells[0].AddParagraph((i + 1).ToString());
-                row.Cells[1].AddParagraph(item.Product?.Name ?? $"Producto #{item.ProductId}");
-                row.Cells[2].AddParagraph(item.Quantity.ToString());
+                row.Cells[1].AddParagraph(item.Description);
+                row.Cells[2].AddParagraph(item.Quantity % 1 == 0 ? item.Quantity.ToString("0") : item.Quantity.ToString("0.##"));
                 row.Cells[3].AddParagraph(item.UnitPrice.ToString("C2"));
                 row.Cells[4].AddParagraph(item.Subtotal.ToString("C2"));
             }

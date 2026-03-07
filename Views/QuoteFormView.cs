@@ -16,11 +16,27 @@ namespace SistemaCotizaciones.Views
         private TextBox txtClientName = null!;
         private DateTimePicker dtpDate = null!;
         private TextBox txtNotes = null!;
+
+        // Product mode controls
+        private RadioButton rbProduct = null!;
+        private RadioButton rbMaterial = null!;
+        private Panel pnlProductMode = null!;
+        private Panel pnlMaterialMode = null!;
         private ComboBox cmbProduct = null!;
         private Label lblProductPrice = null!;
+
+        // Material mode controls
+        private ComboBox cmbMaterial = null!;
+        private ComboBox cmbVariant = null!;
+        private ComboBox cmbOption = null!;
+        private Label lblMaterialPrice = null!;
+        private Label lblUnit = null!;
+
         private NumericUpDown nudQuantity = null!;
         private DataGridView dgvItems = null!;
         private Label lblTotal = null!;
+
+        private List<Material> _materials = new();
 
         public QuoteFormView(Navigator navigator, int? quoteId = null)
         {
@@ -68,23 +84,50 @@ namespace SistemaCotizaciones.Views
             {
                 Text = "Agregar Item",
                 Dock = DockStyle.Top,
-                Height = 95,
+                Height = 135,
                 Padding = new Padding(8)
             };
             AppTheme.StyleGroupBox(grpAddItem);
 
-            var lblProduct = new Label { Text = "Producto:", AutoSize = true, Location = new Point(10, 28) };
+            // Radio buttons for mode selection
+            rbProduct = new RadioButton
+            {
+                Text = "Producto / Servicio",
+                AutoSize = true,
+                Location = new Point(10, 22),
+                Checked = true,
+                Font = AppTheme.DefaultFont,
+                ForeColor = AppTheme.TextPrimary
+            };
+            rbMaterial = new RadioButton
+            {
+                Text = "Material",
+                AutoSize = true,
+                Location = new Point(170, 22),
+                Font = AppTheme.DefaultFont,
+                ForeColor = AppTheme.TextPrimary
+            };
+            rbProduct.CheckedChanged += (s, e) => ToggleMode();
+            rbMaterial.CheckedChanged += (s, e) => ToggleMode();
+
+            // Product mode panel
+            pnlProductMode = new Panel
+            {
+                Location = new Point(5, 42),
+                Size = new Size(620, 30)
+            };
+
+            var lblProduct = new Label { Text = "Producto:", AutoSize = true, Location = new Point(5, 5) };
             lblProduct.Font = AppTheme.DefaultFont;
             lblProduct.ForeColor = AppTheme.TextPrimary;
 
             cmbProduct = new ComboBox
             {
                 DropDownStyle = ComboBoxStyle.DropDownList,
-                Location = new Point(80, 25),
+                Location = new Point(75, 2),
                 Size = new Size(220, 23)
             };
             cmbProduct.Font = AppTheme.DefaultFont;
-            cmbProduct.ForeColor = AppTheme.TextPrimary;
             AppTheme.StyleComboBox(cmbProduct);
             cmbProduct.SelectedIndexChanged += CmbProduct_SelectedIndexChanged;
 
@@ -92,37 +135,102 @@ namespace SistemaCotizaciones.Views
             {
                 Text = "Precio: -",
                 AutoSize = true,
-                Location = new Point(310, 28),
+                Location = new Point(305, 5),
                 Font = AppTheme.DefaultFont,
                 ForeColor = AppTheme.TextPrimary
             };
 
+            pnlProductMode.Controls.AddRange(new Control[] { lblProduct, cmbProduct, lblProductPrice });
+
+            // Material mode panel
+            pnlMaterialMode = new Panel
+            {
+                Location = new Point(5, 42),
+                Size = new Size(620, 55),
+                Visible = false
+            };
+
+            var lblMat = new Label { Text = "Material:", AutoSize = true, Location = new Point(5, 5), Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary };
+            cmbMaterial = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Location = new Point(75, 2),
+                Size = new Size(150, 23)
+            };
+            AppTheme.StyleComboBox(cmbMaterial);
+            cmbMaterial.SelectedIndexChanged += CmbMaterial_SelectedIndexChanged;
+
+            var lblVar = new Label { Text = "Variante:", AutoSize = true, Location = new Point(235, 5), Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary };
+            cmbVariant = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Location = new Point(305, 2),
+                Size = new Size(150, 23)
+            };
+            AppTheme.StyleComboBox(cmbVariant);
+            cmbVariant.SelectedIndexChanged += CmbVariant_SelectedIndexChanged;
+
+            var lblOpt = new Label { Text = "Opción:", AutoSize = true, Location = new Point(5, 32), Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary };
+            cmbOption = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Location = new Point(75, 29),
+                Size = new Size(150, 23)
+            };
+            AppTheme.StyleComboBox(cmbOption);
+            cmbOption.SelectedIndexChanged += CmbOption_SelectedIndexChanged;
+
+            lblMaterialPrice = new Label
+            {
+                Text = "Precio: -",
+                AutoSize = true,
+                Location = new Point(235, 32),
+                Font = AppTheme.DefaultFont,
+                ForeColor = AppTheme.TextPrimary
+            };
+
+            lblUnit = new Label
+            {
+                Text = "",
+                AutoSize = true,
+                Location = new Point(465, 5),
+                Font = AppTheme.SmallFont,
+                ForeColor = AppTheme.TextSecondary
+            };
+
+            pnlMaterialMode.Controls.AddRange(new Control[] { lblMat, cmbMaterial, lblVar, cmbVariant, lblOpt, cmbOption, lblMaterialPrice, lblUnit });
+
+            // Quantity + Add button row
             var lblQuantity = new Label
             {
                 Text = "Cantidad:",
                 AutoSize = true,
-                Location = new Point(10, 52),
+                Location = new Point(10, 102),
                 Font = AppTheme.DefaultFont,
                 ForeColor = AppTheme.TextPrimary
             };
             nudQuantity = new NumericUpDown
             {
-                Location = new Point(80, 49),
+                Location = new Point(80, 99),
                 Size = new Size(100, 23),
-                Minimum = 1,
+                Minimum = 0.01m,
                 Maximum = 99999,
+                DecimalPlaces = 2,
                 Value = 1
             };
             nudQuantity.Font = AppTheme.DefaultFont;
-            nudQuantity.ForeColor = AppTheme.TextPrimary;
             AppTheme.StyleNumericUpDown(nudQuantity);
 
-            var btnAddItem = new Button { Text = "Agregar", Size = new Size(90, 30), Location = new Point(540, 35) };
+            var btnAddItem = new Button { Text = "Agregar", Size = new Size(90, 30), Location = new Point(540, 97) };
             btnAddItem.Font = AppTheme.DefaultFont;
             AppTheme.StylePrimaryButton(btnAddItem);
             btnAddItem.Click += BtnAddItem_Click;
 
-            grpAddItem.Controls.AddRange(new Control[] { lblProduct, cmbProduct, lblProductPrice, lblQuantity, nudQuantity, btnAddItem });
+            grpAddItem.Controls.AddRange(new Control[]
+            {
+                rbProduct, rbMaterial, pnlProductMode, pnlMaterialMode,
+                lblQuantity, nudQuantity, btnAddItem
+            });
 
             // Bottom bar
             var bottomBar = new Panel
@@ -185,11 +293,23 @@ namespace SistemaCotizaciones.Views
             Controls.Add(topPanel);
         }
 
+        private void ToggleMode()
+        {
+            pnlProductMode.Visible = rbProduct.Checked;
+            pnlMaterialMode.Visible = rbMaterial.Checked;
+        }
+
         private void LoadData()
         {
+            // Load products
             var products = _quoteService.GetAvailableProducts();
             cmbProduct.DisplayMember = "Name";
             cmbProduct.DataSource = products;
+
+            // Load materials
+            _materials = _quoteService.GetAvailableMaterials();
+            cmbMaterial.DisplayMember = "Name";
+            cmbMaterial.DataSource = _materials;
 
             if (_quoteId.HasValue)
             {
@@ -217,27 +337,96 @@ namespace SistemaCotizaciones.Views
                 lblProductPrice.Text = "Precio: -";
         }
 
+        private void CmbMaterial_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            cmbVariant.DataSource = null;
+            cmbOption.DataSource = null;
+            lblMaterialPrice.Text = "Precio: -";
+
+            if (cmbMaterial.SelectedItem is Material material)
+            {
+                lblUnit.Text = $"Unidad: {material.Unit}";
+                cmbVariant.DisplayMember = "Name";
+                cmbVariant.DataSource = material.Variants;
+            }
+            else
+            {
+                lblUnit.Text = "";
+            }
+        }
+
+        private void CmbVariant_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            cmbOption.DataSource = null;
+            lblMaterialPrice.Text = "Precio: -";
+
+            if (cmbVariant.SelectedItem is MaterialVariant variant)
+            {
+                cmbOption.DisplayMember = "Name";
+                cmbOption.DataSource = variant.Options;
+            }
+        }
+
+        private void CmbOption_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            if (cmbOption.SelectedItem is MaterialOption option)
+                lblMaterialPrice.Text = $"Precio: {option.Price:C2}";
+            else
+                lblMaterialPrice.Text = "Precio: -";
+        }
+
         private void BtnAddItem_Click(object? sender, EventArgs e)
         {
-            if (cmbProduct.SelectedItem is not Product product)
+            decimal quantity = nudQuantity.Value;
+
+            if (rbProduct.Checked)
             {
-                MessageBox.Show("Seleccione un producto o servicio.", "Validación",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
+                if (cmbProduct.SelectedItem is not Product product)
+                {
+                    MessageBox.Show("Seleccione un producto o servicio.", "Validación",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                decimal unitPrice = product.Price;
+                decimal subtotal = _calcService.CalculateSubtotal(quantity, unitPrice);
+
+                _items.Add(new QuoteItem
+                {
+                    ProductId = product.Id,
+                    Quantity = quantity,
+                    UnitPrice = unitPrice,
+                    Subtotal = subtotal,
+                    Description = product.Name,
+                    Product = product
+                });
             }
-
-            int quantity = (int)nudQuantity.Value;
-            decimal unitPrice = product.Price;
-            decimal subtotal = _calcService.CalculateSubtotal(quantity, unitPrice);
-
-            _items.Add(new QuoteItem
+            else
             {
-                ProductId = product.Id,
-                Quantity = quantity,
-                UnitPrice = unitPrice,
-                Subtotal = subtotal,
-                Product = product
-            });
+                if (cmbOption.SelectedItem is not MaterialOption option)
+                {
+                    MessageBox.Show("Seleccione un material, variante y opción.", "Validación",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                var material = cmbMaterial.SelectedItem as Material;
+                var variant = cmbVariant.SelectedItem as MaterialVariant;
+
+                decimal unitPrice = option.Price;
+                decimal subtotal = _calcService.CalculateSubtotal(quantity, unitPrice);
+                string description = $"{material?.Name} / {variant?.Name} / {option.Name}";
+
+                _items.Add(new QuoteItem
+                {
+                    MaterialOptionId = option.Id,
+                    Quantity = quantity,
+                    UnitPrice = unitPrice,
+                    Subtotal = subtotal,
+                    Description = description,
+                    MaterialOption = option
+                });
+            }
 
             BindItemsGrid();
             RecalculateTotal();
@@ -307,16 +496,16 @@ namespace SistemaCotizaciones.Views
         {
             var displayItems = _items.Select(i => new
             {
-                Producto = i.Product?.Name ?? $"(ID: {i.ProductId})",
-                Cantidad = i.Quantity,
+                Descripción = i.Description,
+                Cantidad = i.Quantity % 1 == 0 ? i.Quantity.ToString("0") : i.Quantity.ToString("0.##"),
                 PrecioUnitario = i.UnitPrice,
                 Subtotal = i.Subtotal
             }).ToList();
 
             dgvItems.DataSource = displayItems;
 
-            if (dgvItems.Columns["Producto"] is DataGridViewColumn colProd)
-                colProd.HeaderText = "Producto";
+            if (dgvItems.Columns["Descripción"] is DataGridViewColumn colDesc)
+                colDesc.HeaderText = "Descripción";
             if (dgvItems.Columns["Cantidad"] is DataGridViewColumn colQty)
                 colQty.HeaderText = "Cantidad";
             if (dgvItems.Columns["PrecioUnitario"] is DataGridViewColumn colPrice)

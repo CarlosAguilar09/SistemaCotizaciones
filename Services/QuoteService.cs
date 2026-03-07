@@ -8,6 +8,7 @@ namespace SistemaCotizaciones.Services
         private readonly QuoteRepository _quoteRepo = new();
         private readonly QuoteItemRepository _quoteItemRepo = new();
         private readonly ProductRepository _productRepo = new();
+        private readonly MaterialRepository _materialRepo = new();
         private readonly QuoteCalculationService _calcService = new();
 
         public List<Quote> GetAll()
@@ -30,6 +31,11 @@ namespace SistemaCotizaciones.Services
             return _productRepo.GetAll();
         }
 
+        public List<Material> GetAvailableMaterials()
+        {
+            return _materialRepo.GetAll();
+        }
+
         public void SaveQuote(Quote quote, List<QuoteItem> items)
         {
             quote.Total = _calcService.CalculateTotal(items);
@@ -39,9 +45,11 @@ namespace SistemaCotizaciones.Services
                 quote.Items.Add(new QuoteItem
                 {
                     ProductId = item.ProductId,
+                    MaterialOptionId = item.MaterialOptionId,
                     Quantity = item.Quantity,
                     UnitPrice = item.UnitPrice,
-                    Subtotal = item.Subtotal
+                    Subtotal = item.Subtotal,
+                    Description = item.Description
                 });
             }
 
@@ -65,9 +73,11 @@ namespace SistemaCotizaciones.Services
                 {
                     QuoteId = quote.Id,
                     ProductId = item.ProductId,
+                    MaterialOptionId = item.MaterialOptionId,
                     Quantity = item.Quantity,
                     UnitPrice = item.UnitPrice,
-                    Subtotal = item.Subtotal
+                    Subtotal = item.Subtotal,
+                    Description = item.Description
                 });
             }
         }

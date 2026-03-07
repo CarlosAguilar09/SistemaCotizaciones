@@ -4,7 +4,7 @@ namespace SistemaCotizaciones.Services
 {
     public class QuoteCalculationService
     {
-        public decimal CalculateSubtotal(int quantity, decimal unitPrice)
+        public decimal CalculateSubtotal(decimal quantity, decimal unitPrice)
         {
             return quantity * unitPrice;
         }
