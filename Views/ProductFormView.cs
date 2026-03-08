@@ -30,83 +30,57 @@ namespace SistemaCotizaciones.Views
         {
             AppTheme.ApplyTo(this);
 
-            var contentPanel = new Panel
-            {
-                Size = new Size(400, 280),
-                BackColor = AppTheme.Surface,
-                Padding = new Padding(20)
-            };
-            contentPanel.Anchor = AnchorStyles.None;
+            // Form layout with 5 rows
+            var formTable = AppTheme.CreateFormLayout(5);
+            formTable.Dock = DockStyle.Top;
+            formTable.Padding = new Padding(AppTheme.SpaceXL, AppTheme.SpaceXL, AppTheme.SpaceXL, AppTheme.SpaceLG);
+            formTable.MaximumSize = new Size(600, 0);
 
-            int y = 20;
-            int labelX = 15;
-            int inputX = 115;
-
-            var lblType = new Label { Text = "Tipo:", AutoSize = true, Location = new Point(labelX, y + 3) };
-            cmbType = new ComboBox
-            {
-                DropDownStyle = ComboBoxStyle.DropDownList,
-                Location = new Point(inputX, y),
-                Size = new Size(200, 23)
-            };
+            // Row 0: Tipo
+            cmbType = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
             cmbType.Items.AddRange(new object[] { "Producto", "Servicio" });
             cmbType.SelectedIndex = 0;
             AppTheme.StyleComboBox(cmbType);
+            AppTheme.AddFormRow(formTable, 0, "Tipo:", cmbType);
 
-            y += 35;
-            var lblName = new Label { Text = "Nombre:", AutoSize = true, Location = new Point(labelX, y + 3) };
-            txtName = new TextBox { Location = new Point(inputX, y), Size = new Size(250, 23) };
+            // Row 1: Nombre
+            txtName = new TextBox();
             AppTheme.StyleTextBox(txtName);
+            AppTheme.AddFormRow(formTable, 1, "Nombre:", txtName);
 
-            y += 35;
-            var lblDescription = new Label { Text = "Descripción:", AutoSize = true, Location = new Point(labelX, y + 3) };
-            txtDescription = new TextBox
-            {
-                Location = new Point(inputX, y),
-                Size = new Size(250, 60),
-                Multiline = true,
-                ScrollBars = ScrollBars.Vertical
-            };
+            // Row 2: Descripción (taller row for multiline)
+            formTable.RowStyles[2] = new RowStyle(SizeType.Absolute, 70);
+            txtDescription = new TextBox { Multiline = true, ScrollBars = ScrollBars.Vertical, Height = 60 };
+            txtDescription.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top | AnchorStyles.Bottom;
             AppTheme.StyleTextBox(txtDescription);
+            AppTheme.AddFormRow(formTable, 2, "Descripción:", txtDescription);
 
-            y += 70;
-            var lblPrice = new Label { Text = "Precio:", AutoSize = true, Location = new Point(labelX, y + 3) };
-            nudPrice = new NumericUpDown
-            {
-                Location = new Point(inputX, y),
-                Size = new Size(150, 23),
-                DecimalPlaces = 2,
-                Maximum = 999999.99m,
-                Minimum = 0
-            };
+            // Row 3: Precio
+            nudPrice = new NumericUpDown { DecimalPlaces = 2, Maximum = 999999.99m, Minimum = 0 };
             AppTheme.StyleNumericUpDown(nudPrice);
+            AppTheme.AddFormRow(formTable, 3, "Precio:", nudPrice);
 
-            y += 40;
-            btnSave = new Button { Text = "Guardar", Size = new Size(110, 35), Location = new Point(inputX, y) };
-            btnBack = new Button { Text = "Volver", Size = new Size(110, 35), Location = new Point(inputX + 120, y) };
+            // Row 4: Buttons
+            formTable.RowStyles[4] = new RowStyle(SizeType.Absolute, 50);
+            var btnFlow = new FlowLayoutPanel
+            {
+                FlowDirection = FlowDirection.LeftToRight,
+                AutoSize = true,
+                WrapContents = false,
+                Margin = new Padding(0, AppTheme.SpaceSM, 0, 0)
+            };
+            btnSave = AppTheme.CreateButton("Guardar", AppTheme.ButtonWidthMD);
             AppTheme.StylePrimaryButton(btnSave);
-            AppTheme.StyleSecondaryButton(btnBack);
-
             btnSave.Click += BtnSave_Click;
+
+            btnBack = AppTheme.CreateButton("Volver", AppTheme.ButtonWidthMD);
+            AppTheme.StyleSecondaryButton(btnBack);
             btnBack.Click += (s, e) => _navigator.GoBack();
 
-            contentPanel.Controls.AddRange(new Control[]
-            {
-                lblType, cmbType, lblName, txtName,
-                lblDescription, txtDescription, lblPrice, nudPrice,
-                btnSave, btnBack
-            });
+            btnFlow.Controls.AddRange(new Control[] { btnSave, btnBack });
+            formTable.Controls.Add(btnFlow, 1, 4);
 
-            Controls.Add(contentPanel);
-
-            // Center the panel
-            Resize += (s, e) =>
-            {
-                contentPanel.Location = new Point(
-                    (ClientSize.Width - contentPanel.Width) / 2,
-                    (ClientSize.Height - contentPanel.Height) / 2
-                );
-            };
+            Controls.Add(formTable);
         }
 
         private void LoadData()

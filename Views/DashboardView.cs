@@ -68,13 +68,14 @@ namespace SistemaCotizaciones.Views
         {
             if (btnProducts == null || btnMaterials == null || btnQuotes == null) return;
 
-            int totalHeight = btnProducts.Height + 20 + btnMaterials.Height + 20 + btnQuotes.Height;
+            int spacing = AppTheme.SpaceXL;
+            int totalHeight = btnProducts.Height + spacing + btnMaterials.Height + spacing + btnQuotes.Height;
             int startY = (ClientSize.Height - totalHeight) / 2;
             int centerX = (ClientSize.Width - btnProducts.Width) / 2;
 
             btnProducts.Location = new Point(centerX, startY);
-            btnMaterials.Location = new Point(centerX, startY + btnProducts.Height + 20);
-            btnQuotes.Location = new Point(centerX, startY + btnProducts.Height + 20 + btnMaterials.Height + 20);
+            btnMaterials.Location = new Point(centerX, startY + btnProducts.Height + spacing);
+            btnQuotes.Location = new Point(centerX, startY + btnProducts.Height + spacing + btnMaterials.Height + spacing);
         }
     }
 }

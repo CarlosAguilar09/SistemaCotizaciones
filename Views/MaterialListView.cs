@@ -35,26 +35,18 @@ namespace SistemaCotizaciones.Views
             };
             AppTheme.StyleDataGridView(dgvMaterials);
 
-            // Bottom button bar
-            var buttonBar = new Panel
-            {
-                Dock = DockStyle.Bottom,
-                Height = 50,
-                BackColor = AppTheme.Background,
-                Padding = new Padding(12, 8, 12, 8)
-            };
+            // Button bar with responsive layout
+            var (buttonBar, leftFlow, rightFlow) = AppTheme.CreateButtonBar();
 
-            var btnNew = new Button { Text = "Nuevo", Size = new Size(90, 32), Location = new Point(12, 9) };
-            var btnEdit = new Button { Text = "Editar", Size = new Size(90, 32), Location = new Point(112, 9) };
-            var btnDelete = new Button { Text = "Eliminar", Size = new Size(90, 32), Location = new Point(212, 9) };
-
+            // New button
+            var btnNew = AppTheme.CreateButton("Nuevo", AppTheme.ButtonWidthSM);
             AppTheme.StylePrimaryButton(btnNew);
-            AppTheme.StyleSecondaryButton(btnEdit);
-            AppTheme.StyleDangerButton(btnDelete);
-
             btnNew.Click += (s, e) =>
                 _navigator.NavigateTo(new MaterialFormView(_navigator), "Nuevo Material");
 
+            // Edit button
+            var btnEdit = AppTheme.CreateButton("Editar", AppTheme.ButtonWidthSM);
+            AppTheme.StyleSecondaryButton(btnEdit);
             btnEdit.Click += (s, e) =>
             {
                 if (dgvMaterials.CurrentRow == null)
@@ -67,6 +59,9 @@ namespace SistemaCotizaciones.Views
                 _navigator.NavigateTo(new MaterialFormView(_navigator, materialId), "Editar Material");
             };
 
+            // Delete button
+            var btnDelete = AppTheme.CreateButton("Eliminar", AppTheme.ButtonWidthSM);
+            AppTheme.StyleDangerButton(btnDelete);
             btnDelete.Click += (s, e) =>
             {
                 if (dgvMaterials.CurrentRow == null)
@@ -87,16 +82,16 @@ namespace SistemaCotizaciones.Views
                 }
             };
 
-            // Back button (right-aligned via Dock)
-            var rightPanel = new Panel { Dock = DockStyle.Right, Width = 100, BackColor = AppTheme.Background };
-            var btnBack = new Button { Text = "Volver", Size = new Size(80, 32), Location = new Point(8, 9) };
+            // Back button
+            var btnBack = AppTheme.CreateButton("Volver", AppTheme.ButtonWidthSM);
             AppTheme.StyleSecondaryButton(btnBack);
             btnBack.Click += (s, e) => _navigator.GoBack();
-            rightPanel.Controls.Add(btnBack);
 
-            buttonBar.Controls.Add(rightPanel);
-            buttonBar.Controls.AddRange(new Control[] { btnNew, btnEdit, btnDelete });
+            // Add buttons to appropriate flow panels
+            leftFlow.Controls.AddRange(new Control[] { btnNew, btnEdit, btnDelete });
+            rightFlow.Controls.Add(btnBack);
 
+            // Add controls to form
             Controls.Add(dgvMaterials);
             Controls.Add(buttonBar);
 

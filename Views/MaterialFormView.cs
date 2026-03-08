@@ -30,62 +30,54 @@ namespace SistemaCotizaciones.Views
         {
             AppTheme.ApplyTo(this);
 
-            // Top panel — material info
-            var topPanel = new Panel
-            {
-                Dock = DockStyle.Top,
-                Height = 115,
-                BackColor = AppTheme.Surface,
-                Padding = new Padding(12, 8, 12, 8)
-            };
-
-            int y = 10;
-            var lblName = new Label { Text = "Nombre:", AutoSize = true, Location = new Point(12, y + 3) };
-            txtName = new TextBox { Location = new Point(100, y), Size = new Size(250, 23) };
+            // Top panel — material info using responsive form layout
+            var formTable = AppTheme.CreateFormLayout(3);
+            
+            txtName = new TextBox();
             AppTheme.StyleTextBox(txtName);
+            AppTheme.AddFormRow(formTable, 0, "Nombre:", txtName);
 
-            y += 30;
-            var lblUnit = new Label { Text = "Unidad:", AutoSize = true, Location = new Point(12, y + 3) };
-            txtUnit = new TextBox { Location = new Point(100, y), Size = new Size(120, 23), PlaceholderText = "m², pieza, rollo..." };
+            txtUnit = new TextBox { PlaceholderText = "m², pieza, rollo..." };
             AppTheme.StyleTextBox(txtUnit);
+            AppTheme.AddFormRow(formTable, 1, "Unidad:", txtUnit);
 
-            y += 30;
-            var lblDesc = new Label { Text = "Descripción:", AutoSize = true, Location = new Point(12, y + 3) };
-            txtDescription = new TextBox { Location = new Point(100, y), Size = new Size(400, 23) };
+            txtDescription = new TextBox();
             AppTheme.StyleTextBox(txtDescription);
+            AppTheme.AddFormRow(formTable, 2, "Descripción:", txtDescription);
 
-            topPanel.Controls.AddRange(new Control[] { lblName, txtName, lblUnit, txtUnit, lblDesc, txtDescription });
+            // Separator
+            var sep1 = AppTheme.CreateSeparator();
 
             // Variant/Option management toolbar
-            var variantToolbar = new Panel
-            {
-                Dock = DockStyle.Top,
-                Height = 42,
-                BackColor = AppTheme.Background,
-                Padding = new Padding(12, 5, 12, 5)
-            };
+            var (variantToolbar, toolFlow) = AppTheme.CreateToolbar();
 
-            var btnAddVariant = new Button { Text = "+ Variante", Size = new Size(100, 30), Location = new Point(12, 5) };
+            var btnAddVariant = AppTheme.CreateButton("+ Variante", AppTheme.ButtonWidthMD);
             AppTheme.StylePrimaryButton(btnAddVariant);
             btnAddVariant.Click += BtnAddVariant_Click;
+            toolFlow.Controls.Add(btnAddVariant);
 
-            var btnAddOption = new Button { Text = "+ Opción", Size = new Size(100, 30), Location = new Point(122, 5) };
+            var btnAddOption = AppTheme.CreateButton("+ Opción", AppTheme.ButtonWidthMD);
             AppTheme.StyleSecondaryButton(btnAddOption);
             btnAddOption.Click += BtnAddOption_Click;
+            toolFlow.Controls.Add(btnAddOption);
 
-            var btnRename = new Button { Text = "Renombrar", Size = new Size(100, 30), Location = new Point(232, 5) };
+            var btnRename = AppTheme.CreateButton("Renombrar", AppTheme.ButtonWidthMD);
             AppTheme.StyleSecondaryButton(btnRename);
             btnRename.Click += BtnRename_Click;
+            toolFlow.Controls.Add(btnRename);
 
-            var btnSetPrice = new Button { Text = "Cambiar Precio", Size = new Size(120, 30), Location = new Point(342, 5) };
+            var btnSetPrice = AppTheme.CreateButton("Cambiar Precio", AppTheme.ButtonWidthLG);
             AppTheme.StyleSecondaryButton(btnSetPrice);
             btnSetPrice.Click += BtnSetPrice_Click;
+            toolFlow.Controls.Add(btnSetPrice);
 
-            var btnRemove = new Button { Text = "Eliminar", Size = new Size(90, 30), Location = new Point(472, 5) };
+            var btnRemove = AppTheme.CreateButton("Eliminar", AppTheme.ButtonWidthSM);
             AppTheme.StyleDangerButton(btnRemove);
             btnRemove.Click += BtnRemove_Click;
+            toolFlow.Controls.Add(btnRemove);
 
-            variantToolbar.Controls.AddRange(new Control[] { btnAddVariant, btnAddOption, btnRename, btnSetPrice, btnRemove });
+            // Separator
+            var sep2 = AppTheme.CreateSeparator();
 
             // TreeView for variants and options
             tvVariants = new TreeView
@@ -99,32 +91,25 @@ namespace SistemaCotizaciones.Views
             };
 
             // Bottom bar
-            var bottomBar = new Panel
-            {
-                Dock = DockStyle.Bottom,
-                Height = 55,
-                BackColor = AppTheme.Background,
-                Padding = new Padding(12, 8, 12, 8)
-            };
+            var (bottomBar, leftFlow, rightFlow) = AppTheme.CreateButtonBar();
 
-            var rightPanel = new Panel { Dock = DockStyle.Right, Width = 220, BackColor = AppTheme.Background };
-
-            var btnSave = new Button { Text = "Guardar", Size = new Size(100, 32), Location = new Point(0, 1) };
+            var btnSave = AppTheme.CreateButton("Guardar", AppTheme.ButtonWidthMD);
             AppTheme.StylePrimaryButton(btnSave);
             btnSave.Click += BtnSave_Click;
+            rightFlow.Controls.Add(btnSave);
 
-            var btnBack = new Button { Text = "Volver", Size = new Size(90, 32), Location = new Point(110, 1) };
+            var btnBack = AppTheme.CreateButton("Volver", AppTheme.ButtonWidthSM);
             AppTheme.StyleSecondaryButton(btnBack);
             btnBack.Click += (s, e) => _navigator.GoBack();
+            rightFlow.Controls.Add(btnBack);
 
-            rightPanel.Controls.AddRange(new Control[] { btnSave, btnBack });
-            bottomBar.Controls.Add(rightPanel);
-
-            // Add in correct order for docking
+            // Add in correct order for docking (last docked to first)
             Controls.Add(tvVariants);
             Controls.Add(bottomBar);
+            Controls.Add(sep2);
             Controls.Add(variantToolbar);
-            Controls.Add(topPanel);
+            Controls.Add(sep1);
+            Controls.Add(formTable);
         }
 
         private void LoadData()
@@ -337,13 +322,20 @@ namespace SistemaCotizaciones.Views
                 StartPosition = FormStartPosition.CenterParent,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 MaximizeBox = false,
-                MinimizeBox = false
+                MinimizeBox = false,
+                BackColor = AppTheme.Background,
+                Font = AppTheme.DefaultFont
             };
 
             var lbl = new Label { Text = label, AutoSize = true, Location = new Point(12, 15) };
             var txt = new TextBox { Location = new Point(12, 40), Size = new Size(300, 23), Text = defaultValue };
+            AppTheme.StyleTextBox(txt);
+            
             var btnOk = new Button { Text = "Aceptar", DialogResult = DialogResult.OK, Location = new Point(130, 75), Size = new Size(80, 30) };
+            AppTheme.StylePrimaryButton(btnOk);
+            
             var btnCancel = new Button { Text = "Cancelar", DialogResult = DialogResult.Cancel, Location = new Point(220, 75), Size = new Size(80, 30) };
+            AppTheme.StyleSecondaryButton(btnCancel);
 
             form.Controls.AddRange(new Control[] { lbl, txt, btnOk, btnCancel });
             form.AcceptButton = btnOk;

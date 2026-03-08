@@ -38,19 +38,14 @@ namespace SistemaCotizaciones.Views
             };
             AppTheme.StyleDataGridView(dgvQuotes);
 
-            // Bottom button bar
-            var buttonBar = new Panel
-            {
-                Dock = DockStyle.Bottom,
-                Height = 50,
-                BackColor = AppTheme.Background,
-                Padding = new Padding(12, 8, 12, 8)
-            };
+            // Bottom button bar using responsive layout
+            var (buttonBar, leftFlow, rightFlow) = AppTheme.CreateButtonBar();
 
-            btnNew = new Button { Text = "Nueva", Size = new Size(100, 32), Location = new Point(12, 9) };
-            btnEdit = new Button { Text = "Editar", Size = new Size(90, 32), Location = new Point(122, 9) };
-            btnViewDetails = new Button { Text = "Ver Detalles", Size = new Size(110, 32), Location = new Point(222, 9) };
-            btnDelete = new Button { Text = "Eliminar", Size = new Size(90, 32), Location = new Point(342, 9) };
+            // Left flow: Nueva, Editar, Ver Detalles, Eliminar
+            btnNew = AppTheme.CreateButton("Nueva", AppTheme.ButtonWidthMD);
+            btnEdit = AppTheme.CreateButton("Editar", AppTheme.ButtonWidthSM);
+            btnViewDetails = AppTheme.CreateButton("Ver Detalles", AppTheme.ButtonWidthLG);
+            btnDelete = AppTheme.CreateButton("Eliminar", AppTheme.ButtonWidthSM);
 
             AppTheme.StylePrimaryButton(btnNew);
             AppTheme.StyleSecondaryButton(btnEdit);
@@ -62,15 +57,16 @@ namespace SistemaCotizaciones.Views
             btnViewDetails.Click += BtnViewDetails_Click;
             btnDelete.Click += BtnDelete_Click;
 
-            // Back button (right-aligned via Dock)
-            var rightPanel = new Panel { Dock = DockStyle.Right, Width = 100, BackColor = AppTheme.Background };
-            var btnBack = new Button { Text = "Volver", Size = new Size(80, 32), Location = new Point(8, 9) };
+            leftFlow.Controls.Add(btnNew);
+            leftFlow.Controls.Add(btnEdit);
+            leftFlow.Controls.Add(btnViewDetails);
+            leftFlow.Controls.Add(btnDelete);
+
+            // Right flow: Volver
+            var btnBack = AppTheme.CreateButton("Volver", AppTheme.ButtonWidthSM);
             AppTheme.StyleSecondaryButton(btnBack);
             btnBack.Click += (s, e) => _navigator.GoBack();
-            rightPanel.Controls.Add(btnBack);
-
-            buttonBar.Controls.Add(rightPanel);
-            buttonBar.Controls.AddRange(new Control[] { btnNew, btnEdit, btnViewDetails, btnDelete });
+            rightFlow.Controls.Add(btnBack);
 
             Controls.Add(dgvQuotes);
             Controls.Add(buttonBar);
@@ -92,11 +88,17 @@ namespace SistemaCotizaciones.Views
             if (dgvQuotes.Columns["ClientName"] is DataGridViewColumn colClient)
                 colClient.HeaderText = "Cliente";
             if (dgvQuotes.Columns["Date"] is DataGridViewColumn colDate)
+            {
                 colDate.HeaderText = "Fecha";
+                AppTheme.StyleDateColumn(colDate);
+            }
             if (dgvQuotes.Columns["Notes"] is DataGridViewColumn colNotes)
                 colNotes.HeaderText = "Notas";
             if (dgvQuotes.Columns["Total"] is DataGridViewColumn colTotal)
+            {
                 colTotal.HeaderText = "Total";
+                AppTheme.StyleCurrencyColumn(colTotal);
+            }
         }
 
         private void BtnNew_Click(object? sender, EventArgs e)

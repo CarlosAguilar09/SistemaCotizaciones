@@ -27,50 +27,46 @@ namespace SistemaCotizaciones.Views
         {
             AppTheme.ApplyTo(this);
 
-            // Toolbar panel
-            var toolbar = new Panel
-            {
-                Dock = DockStyle.Top,
-                Height = 45,
-                BackColor = AppTheme.Surface,
-                Padding = new Padding(12, 8, 12, 8)
-            };
+            // Toolbar using responsive layout
+            var (toolbar, toolbarFlow) = AppTheme.CreateToolbar();
 
             var lblFilter = new Label
             {
                 Text = "Filtrar por:",
                 AutoSize = true,
-                Location = new Point(12, 12)
+                Margin = new Padding(0, 0, AppTheme.SpaceSM, 0)
             };
+            toolbarFlow.Controls.Add(lblFilter);
 
             cmbFilter = new ComboBox
             {
                 DropDownStyle = ComboBoxStyle.DropDownList,
-                Location = new Point(90, 9),
-                Size = new Size(120, 23)
+                Width = 120,
+                Margin = new Padding(0, 0, AppTheme.SpaceLG, 0)
             };
             cmbFilter.Items.AddRange(new object[] { "Todos", "Producto", "Servicio" });
             cmbFilter.SelectedIndex = 0;
             cmbFilter.SelectedIndexChanged += (s, e) => LoadProducts();
             AppTheme.StyleComboBox(cmbFilter);
+            toolbarFlow.Controls.Add(cmbFilter);
 
             var lblSearch = new Label
             {
                 Text = "Buscar:",
                 AutoSize = true,
-                Location = new Point(230, 12)
+                Margin = new Padding(0, 0, AppTheme.SpaceSM, 0)
             };
+            toolbarFlow.Controls.Add(lblSearch);
 
             txtSearch = new TextBox
             {
-                Location = new Point(285, 9),
-                Size = new Size(200, 23),
-                PlaceholderText = "Nombre o descripción..."
+                Width = 200,
+                PlaceholderText = "Nombre o descripción...",
+                Margin = new Padding(0, 0, AppTheme.SpaceLG, 0)
             };
             txtSearch.TextChanged += (s, e) => LoadProducts();
             AppTheme.StyleTextBox(txtSearch);
-
-            toolbar.Controls.AddRange(new Control[] { lblFilter, cmbFilter, lblSearch, txtSearch });
+            toolbarFlow.Controls.Add(txtSearch);
 
             // Grid
             dgvProducts = new DataGridView
@@ -85,36 +81,28 @@ namespace SistemaCotizaciones.Views
             };
             AppTheme.StyleDataGridView(dgvProducts);
 
-            // Bottom button bar
-            var buttonBar = new Panel
-            {
-                Dock = DockStyle.Bottom,
-                Height = 50,
-                BackColor = AppTheme.Background,
-                Padding = new Padding(12, 8, 12, 8)
-            };
+            // Bottom button bar using responsive layout
+            var (buttonBar, leftFlow, rightFlow) = AppTheme.CreateButtonBar();
 
-            btnNew = new Button { Text = "Nuevo", Size = new Size(90, 32), Location = new Point(12, 9) };
-            btnEdit = new Button { Text = "Editar", Size = new Size(90, 32), Location = new Point(112, 9) };
-            btnDelete = new Button { Text = "Eliminar", Size = new Size(90, 32), Location = new Point(212, 9) };
-
-            AppTheme.StylePrimaryButton(btnNew);
-            AppTheme.StyleSecondaryButton(btnEdit);
-            AppTheme.StyleDangerButton(btnDelete);
-
+            btnNew = AppTheme.CreateButton("Nuevo", AppTheme.ButtonWidthMD);
             btnNew.Click += BtnNew_Click;
-            btnEdit.Click += BtnEdit_Click;
-            btnDelete.Click += BtnDelete_Click;
+            AppTheme.StylePrimaryButton(btnNew);
+            leftFlow.Controls.Add(btnNew);
 
-            // Back button (right-aligned via Dock)
-            var rightPanel = new Panel { Dock = DockStyle.Right, Width = 100, BackColor = AppTheme.Background };
-            var btnBack = new Button { Text = "Volver", Size = new Size(80, 32), Location = new Point(8, 9) };
+            btnEdit = AppTheme.CreateButton("Editar", AppTheme.ButtonWidthMD);
+            btnEdit.Click += BtnEdit_Click;
+            AppTheme.StyleSecondaryButton(btnEdit);
+            leftFlow.Controls.Add(btnEdit);
+
+            btnDelete = AppTheme.CreateButton("Eliminar", AppTheme.ButtonWidthMD);
+            btnDelete.Click += BtnDelete_Click;
+            AppTheme.StyleDangerButton(btnDelete);
+            leftFlow.Controls.Add(btnDelete);
+
+            var btnBack = AppTheme.CreateButton("Volver", AppTheme.ButtonWidthMD);
             AppTheme.StyleSecondaryButton(btnBack);
             btnBack.Click += (s, e) => _navigator.GoBack();
-            rightPanel.Controls.Add(btnBack);
-
-            buttonBar.Controls.Add(rightPanel);
-            buttonBar.Controls.AddRange(new Control[] { btnNew, btnEdit, btnDelete });
+            rightFlow.Controls.Add(btnBack);
 
             // Add in correct order for docking
             Controls.Add(dgvProducts);
@@ -151,7 +139,10 @@ namespace SistemaCotizaciones.Views
             if (dgvProducts.Columns["Description"] is DataGridViewColumn colDesc)
                 colDesc.HeaderText = "Descripción";
             if (dgvProducts.Columns["Price"] is DataGridViewColumn colPrice)
+            {
                 colPrice.HeaderText = "Precio";
+                AppTheme.StyleCurrencyColumn(colPrice);
+            }
         }
 
         private void BtnNew_Click(object? sender, EventArgs e)

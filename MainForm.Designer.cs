@@ -25,11 +25,11 @@
 
             // MainForm
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(750, 520);
+            this.ClientSize = new System.Drawing.Size(950, 620);
             this.Controls.Add(this.pnlContent);
             this.Text = "CUBO Signs — Sistema de Cotizaciones";
             this.StartPosition = FormStartPosition.CenterScreen;
-            this.MinimumSize = new System.Drawing.Size(700, 480);
+            this.MinimumSize = new System.Drawing.Size(900, 600);
             this.Load += new EventHandler(this.MainForm_Load);
 
             this.ResumeLayout(false);

@@ -33,77 +33,44 @@ namespace SistemaCotizaciones.Views
         {
             AppTheme.ApplyTo(this);
 
-            // Top info panel
-            var infoPanel = new Panel
-            {
-                Dock = DockStyle.Top,
-                Height = 110,
-                BackColor = AppTheme.Surface,
-                Padding = new Padding(16, 12, 16, 8)
-            };
+            // Top info panel using responsive form layout
+            var formTable = AppTheme.CreateFormLayout(3);
 
-            var lblClientLabel = new Label { Text = "Cliente:", AutoSize = true, Location = new Point(16, 12) };
-            AppTheme.StyleHeadingLabel(lblClientLabel);
-            lblClientName = new Label { Text = "-", AutoSize = true, Location = new Point(100, 12) };
+            // Row 0: Cliente
+            lblClientName = new Label { Text = "-", AutoSize = false, Dock = DockStyle.Fill, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary };
+            AppTheme.AddFormRow(formTable, 0, "Cliente:", lblClientName);
 
-            var lblDateLabel = new Label { Text = "Fecha:", AutoSize = true, Location = new Point(16, 38) };
-            AppTheme.StyleHeadingLabel(lblDateLabel);
-            lblDate = new Label { Text = "-", AutoSize = true, Location = new Point(100, 38) };
+            // Row 1: Fecha
+            lblDate = new Label { Text = "-", AutoSize = false, Dock = DockStyle.Fill, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary };
+            AppTheme.AddFormRow(formTable, 1, "Fecha:", lblDate);
 
-            var lblNotesLabel = new Label { Text = "Notas:", AutoSize = true, Location = new Point(16, 64) };
-            AppTheme.StyleHeadingLabel(lblNotesLabel);
-            txtNotes = new TextBox
-            {
-                Location = new Point(100, 62),
-                Size = new Size(520, 35),
-                Multiline = true,
-                ReadOnly = true,
-                ScrollBars = ScrollBars.Vertical,
-                BackColor = AppTheme.Surface,
-                BorderStyle = BorderStyle.FixedSingle
-            };
+            // Row 2: Notas (taller row)
+            formTable.RowStyles[2] = new RowStyle(SizeType.Absolute, 50);
+            txtNotes = new TextBox { Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, BackColor = AppTheme.Surface, BorderStyle = BorderStyle.FixedSingle };
+            AppTheme.AddFormRow(formTable, 2, "Notas:", txtNotes);
 
-            infoPanel.Controls.AddRange(new Control[] { lblClientLabel, lblClientName, lblDateLabel, lblDate, lblNotesLabel, txtNotes });
+            // Bottom bar using responsive button layout
+            var (bottomBar, leftFlow, rightFlow) = AppTheme.CreateButtonBar();
 
-            // Bottom bar
-            var bottomBar = new Panel
-            {
-                Dock = DockStyle.Bottom,
-                Height = 55,
-                BackColor = AppTheme.Background,
-                Padding = new Padding(12, 8, 12, 8)
-            };
-
-            var btnExportPdf = new Button { Text = "Exportar PDF", Size = new Size(130, 32), Location = new Point(0, 1) };
+            var btnExportPdf = AppTheme.CreateButton("Exportar PDF", AppTheme.ButtonWidthLG);
             AppTheme.StylePrimaryButton(btnExportPdf);
             btnExportPdf.Click += BtnExportPdf_Click;
 
-            var btnViewCalc = new Button { Text = "Ver Cálculo", Size = new Size(110, 32), Location = new Point(140, 1) };
+            var btnViewCalc = AppTheme.CreateButton("Ver Cálculo", AppTheme.ButtonWidthMD);
             AppTheme.StyleSecondaryButton(btnViewCalc);
             btnViewCalc.Click += BtnViewCalc_Click;
 
-            var leftPanel = new Panel { Dock = DockStyle.Left, Width = 270, BackColor = AppTheme.Background };
-            leftPanel.Controls.AddRange(new Control[] { btnExportPdf, btnViewCalc });
+            leftFlow.Controls.AddRange(new Control[] { btnExportPdf, btnViewCalc });
 
-            // Right section — total + back (using Dock=Right sub-panel)
-            var rightPanel = new Panel { Dock = DockStyle.Right, Width = 310, BackColor = AppTheme.Background };
-
-            lblTotal = new Label
-            {
-                AutoSize = true,
-                Location = new Point(0, 4),
-                Text = "Total: $0.00"
-            };
-            AppTheme.StyleTotalLabel(lblTotal);
-
-            var btnBack = new Button { Text = "Volver", Size = new Size(90, 32), Location = new Point(210, 1) };
+            var btnBack = AppTheme.CreateButton("Volver", AppTheme.ButtonWidthSM);
             AppTheme.StyleSecondaryButton(btnBack);
             btnBack.Click += (s, e) => _navigator.GoBack();
 
-            rightPanel.Controls.AddRange(new Control[] { lblTotal, btnBack });
+            lblTotal = new Label { AutoSize = true, Text = "Total: $0.00", Margin = new Padding(AppTheme.SpaceMD, AppTheme.SpaceSM, 0, 0) };
+            AppTheme.StyleTotalLabel(lblTotal);
 
-            bottomBar.Controls.Add(leftPanel);
-            bottomBar.Controls.Add(rightPanel);
+            rightFlow.Controls.Add(btnBack);
+            rightFlow.Controls.Add(lblTotal);
 
             // Items grid
             dgvItems = new DataGridView
@@ -120,7 +87,7 @@ namespace SistemaCotizaciones.Views
 
             Controls.Add(dgvItems);
             Controls.Add(bottomBar);
-            Controls.Add(infoPanel);
+            Controls.Add(formTable);
         }
 
         private void LoadData()
@@ -162,9 +129,15 @@ namespace SistemaCotizaciones.Views
             if (dgvItems.Columns["Cantidad"] is DataGridViewColumn colQty)
                 colQty.HeaderText = "Cantidad";
             if (dgvItems.Columns["PrecioUnitario"] is DataGridViewColumn colPrice)
+            {
                 colPrice.HeaderText = "Precio Unit.";
+                AppTheme.StyleCurrencyColumn(colPrice);
+            }
             if (dgvItems.Columns["Subtotal"] is DataGridViewColumn colSub)
+            {
                 colSub.HeaderText = "Subtotal";
+                AppTheme.StyleCurrencyColumn(colSub);
+            }
             if (dgvItems.Columns["Tipo"] is DataGridViewColumn colType)
                 colType.HeaderText = "Tipo";
         }
@@ -174,7 +147,7 @@ namespace SistemaCotizaciones.Views
             "Fijo" => "Fijo",
             "Material" => "Material",
             "Area" => "Área",
-            "Personalizado" => "Custom",
+            "Personalizado" => "Personalizado",
             _ => pricingType
         };
 

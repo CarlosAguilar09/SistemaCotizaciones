@@ -2,7 +2,7 @@ namespace SistemaCotizaciones.Helpers
 {
     public static class AppTheme
     {
-        // Brand colors
+        // ── Brand colors ──
         public static readonly Color Primary = Color.FromArgb(45, 52, 54);       // #2D3436
         public static readonly Color Accent = Color.FromArgb(225, 112, 85);      // #E17055
         public static readonly Color AccentHover = Color.FromArgb(210, 95, 70);  // Darker orange
@@ -17,6 +17,26 @@ namespace SistemaCotizaciones.Helpers
         public static readonly Color GridAltRow = Color.FromArgb(248, 249, 250);      // #F8F9FA
         public static readonly Color BorderLight = Color.FromArgb(206, 214, 224);     // #CED6E0
 
+        // ── Spacing tokens ──
+        public const int SpaceXS = 4;
+        public const int SpaceSM = 8;
+        public const int SpaceMD = 12;
+        public const int SpaceLG = 16;
+        public const int SpaceXL = 24;
+        public const int SpaceXXL = 32;
+
+        // ── Standard dimensions ──
+        public const int HeaderHeight = 50;
+        public const int ToolbarHeight = 48;
+        public const int ButtonBarHeight = 56;
+        public const int InputHeight = 28;
+        public const int ButtonHeight = 34;
+        public const int ButtonWidthSM = 90;
+        public const int ButtonWidthMD = 110;
+        public const int ButtonWidthLG = 140;
+        public const int FormRowHeight = 36;
+
+        // ── Fonts ──
         public static readonly Font DefaultFont = new("Segoe UI", 9.5F, FontStyle.Regular);
         public static readonly Font HeadingFont = new("Segoe UI", 11F, FontStyle.Bold);
         public static readonly Font TitleFont = new("Segoe UI", 14F, FontStyle.Bold);
@@ -204,6 +224,166 @@ namespace SistemaCotizaciones.Helpers
                 ctrl.Font = DefaultFont;
                 ctrl.ForeColor = TextPrimary;
             }
+        }
+
+        // ── Layout helpers ──
+
+        /// <summary>
+        /// Creates a standard bottom action bar with left and right FlowLayoutPanels.
+        /// Returns (bar, leftFlow, rightFlow). Add buttons to leftFlow/rightFlow.
+        /// </summary>
+        public static (Panel bar, FlowLayoutPanel left, FlowLayoutPanel right) CreateButtonBar()
+        {
+            var bar = new Panel
+            {
+                Dock = DockStyle.Bottom,
+                Height = ButtonBarHeight,
+                BackColor = Background,
+                Padding = new Padding(SpaceMD, SpaceSM, SpaceMD, SpaceSM)
+            };
+
+            var rightFlow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Right,
+                FlowDirection = FlowDirection.RightToLeft,
+                AutoSize = true,
+                WrapContents = false,
+                BackColor = Background,
+                Padding = Padding.Empty,
+                Margin = Padding.Empty
+            };
+
+            var leftFlow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                BackColor = Background,
+                Padding = Padding.Empty,
+                Margin = Padding.Empty
+            };
+
+            bar.Controls.Add(leftFlow);
+            bar.Controls.Add(rightFlow);
+
+            return (bar, leftFlow, rightFlow);
+        }
+
+        /// <summary>
+        /// Creates a toolbar panel (Dock=Top) with a FlowLayoutPanel inside.
+        /// Returns (toolbar, flow). Add controls to flow.
+        /// </summary>
+        public static (Panel toolbar, FlowLayoutPanel flow) CreateToolbar()
+        {
+            var toolbar = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = ToolbarHeight,
+                BackColor = Surface,
+                Padding = new Padding(SpaceMD, SpaceSM, SpaceMD, SpaceSM)
+            };
+
+            var flow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                BackColor = Surface,
+                Padding = Padding.Empty,
+                Margin = Padding.Empty
+            };
+
+            toolbar.Controls.Add(flow);
+            return (toolbar, flow);
+        }
+
+        /// <summary>
+        /// Creates a 2-column TableLayoutPanel for form fields (label auto-width, input stretches).
+        /// </summary>
+        public static TableLayoutPanel CreateFormLayout(int rows)
+        {
+            var table = new TableLayoutPanel
+            {
+                ColumnCount = 2,
+                RowCount = rows,
+                AutoSize = true,
+                Dock = DockStyle.Top,
+                BackColor = Surface,
+                Padding = new Padding(SpaceLG, SpaceMD, SpaceLG, SpaceMD)
+            };
+
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+
+            for (int i = 0; i < rows; i++)
+                table.RowStyles.Add(new RowStyle(SizeType.Absolute, FormRowHeight));
+
+            return table;
+        }
+
+        /// <summary>
+        /// Adds a labeled control row to a form TableLayoutPanel.
+        /// </summary>
+        public static void AddFormRow(TableLayoutPanel table, int row, string labelText, Control input)
+        {
+            var label = new Label
+            {
+                Text = labelText,
+                AutoSize = true,
+                Font = DefaultFont,
+                ForeColor = TextPrimary,
+                Anchor = AnchorStyles.Left,
+                Margin = new Padding(0, 0, SpaceSM, 0)
+            };
+            input.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+            input.Margin = new Padding(0);
+
+            table.Controls.Add(label, 0, row);
+            table.Controls.Add(input, 1, row);
+        }
+
+        /// <summary>
+        /// Creates a thin horizontal separator line.
+        /// </summary>
+        public static Panel CreateSeparator()
+        {
+            return new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 1,
+                BackColor = BorderLight,
+                Margin = Padding.Empty
+            };
+        }
+
+        /// <summary>
+        /// Styles a DataGridView column as currency (right-aligned, C2 format).
+        /// </summary>
+        public static void StyleCurrencyColumn(DataGridViewColumn col)
+        {
+            col.DefaultCellStyle.Format = "C2";
+            col.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+        }
+
+        /// <summary>
+        /// Styles a DataGridView column as a short date (dd/MM/yyyy).
+        /// </summary>
+        public static void StyleDateColumn(DataGridViewColumn col)
+        {
+            col.DefaultCellStyle.Format = "dd/MM/yyyy";
+        }
+
+        /// <summary>
+        /// Creates a standard-sized button with consistent dimensions.
+        /// </summary>
+        public static Button CreateButton(string text, int width = ButtonWidthMD)
+        {
+            return new Button
+            {
+                Text = text,
+                Size = new Size(width, ButtonHeight),
+                Margin = new Padding(0, 0, SpaceSM, 0)
+            };
         }
     }
 }

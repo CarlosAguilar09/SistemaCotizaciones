@@ -76,254 +76,319 @@ namespace SistemaCotizaciones.Views
         {
             AppTheme.ApplyTo(this);
 
-            // Top section — client info
-            var topPanel = new Panel
+            // -- Top section: client info (4-column table) --
+            var topTable = new TableLayoutPanel
             {
                 Dock = DockStyle.Top,
-                Height = 90,
+                AutoSize = true,
                 BackColor = AppTheme.Surface,
-                Padding = new Padding(12, 8, 12, 8)
+                Padding = new Padding(AppTheme.SpaceLG, AppTheme.SpaceMD, AppTheme.SpaceLG, AppTheme.SpaceMD),
+                ColumnCount = 4,
+                RowCount = 2
             };
+            topTable.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            topTable.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 60F));
+            topTable.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            topTable.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40F));
+            topTable.RowStyles.Add(new RowStyle(SizeType.Absolute, AppTheme.FormRowHeight));
+            topTable.RowStyles.Add(new RowStyle(SizeType.Absolute, AppTheme.FormRowHeight));
 
-            var lblClientName = new Label { Text = "Cliente:", AutoSize = true, Location = new Point(12, 12) };
-            txtClientName = new TextBox { Location = new Point(85, 9), Size = new Size(300, 23) };
+            var lblClient = new Label
+            {
+                Text = "Cliente:",
+                AutoSize = true,
+                Anchor = AnchorStyles.Left,
+                Font = AppTheme.DefaultFont,
+                ForeColor = AppTheme.TextPrimary,
+                Margin = new Padding(0, 0, AppTheme.SpaceSM, 0)
+            };
+            txtClientName = new TextBox
+            {
+                Anchor = AnchorStyles.Left | AnchorStyles.Right,
+                Margin = new Padding(0, 0, AppTheme.SpaceLG, 0)
+            };
             AppTheme.StyleTextBox(txtClientName);
 
-            var lblDate = new Label { Text = "Fecha:", AutoSize = true, Location = new Point(400, 12) };
+            var lblDate = new Label
+            {
+                Text = "Fecha:",
+                AutoSize = true,
+                Anchor = AnchorStyles.Left,
+                Font = AppTheme.DefaultFont,
+                ForeColor = AppTheme.TextPrimary,
+                Margin = new Padding(0, 0, AppTheme.SpaceSM, 0)
+            };
             dtpDate = new DateTimePicker
             {
-                Location = new Point(450, 9),
-                Size = new Size(180, 23),
                 Format = DateTimePickerFormat.Short,
-                Value = DateTime.Today
+                Value = DateTime.Today,
+                Anchor = AnchorStyles.Left | AnchorStyles.Right
             };
 
-            var lblNotes = new Label { Text = "Notas:", AutoSize = true, Location = new Point(12, 50) };
-            txtNotes = new TextBox { Location = new Point(85, 47), Size = new Size(545, 23) };
+            topTable.Controls.Add(lblClient, 0, 0);
+            topTable.Controls.Add(txtClientName, 1, 0);
+            topTable.Controls.Add(lblDate, 2, 0);
+            topTable.Controls.Add(dtpDate, 3, 0);
+
+            var lblNotes = new Label
+            {
+                Text = "Notas:",
+                AutoSize = true,
+                Anchor = AnchorStyles.Left,
+                Font = AppTheme.DefaultFont,
+                ForeColor = AppTheme.TextPrimary,
+                Margin = new Padding(0, 0, AppTheme.SpaceSM, 0)
+            };
+            txtNotes = new TextBox { Anchor = AnchorStyles.Left | AnchorStyles.Right };
             AppTheme.StyleTextBox(txtNotes);
 
-            topPanel.Controls.AddRange(new Control[] { lblClientName, txtClientName, lblDate, dtpDate, lblNotes, txtNotes });
+            topTable.Controls.Add(lblNotes, 0, 1);
+            topTable.Controls.Add(txtNotes, 1, 1);
+            topTable.SetColumnSpan(txtNotes, 3);
 
-            // Add item section
+            // -- Add item section --
             var grpAddItem = new GroupBox
             {
                 Text = "Agregar Item",
                 Dock = DockStyle.Top,
                 Height = 210,
-                Padding = new Padding(8)
+                Padding = new Padding(AppTheme.SpaceSM)
             };
             AppTheme.StyleGroupBox(grpAddItem);
 
-            // Radio buttons for mode selection
+            // Radio buttons in a flow layout
+            var radioFlow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                Height = 30,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                BackColor = Color.Transparent,
+                Padding = new Padding(AppTheme.SpaceXS, 0, 0, 0)
+            };
             rbProduct = new RadioButton
             {
                 Text = "Producto / Servicio",
                 AutoSize = true,
-                Location = new Point(10, 22),
                 Checked = true,
                 Font = AppTheme.DefaultFont,
-                ForeColor = AppTheme.TextPrimary
+                ForeColor = AppTheme.TextPrimary,
+                Margin = new Padding(0, 0, AppTheme.SpaceMD, 0)
             };
             rbMaterial = new RadioButton
             {
                 Text = "Material",
                 AutoSize = true,
-                Location = new Point(170, 22),
                 Font = AppTheme.DefaultFont,
-                ForeColor = AppTheme.TextPrimary
+                ForeColor = AppTheme.TextPrimary,
+                Margin = new Padding(0, 0, AppTheme.SpaceMD, 0)
             };
             rbArea = new RadioButton
             {
-                Text = "Área",
+                Text = "\u00c1rea",
                 AutoSize = true,
-                Location = new Point(270, 22),
                 Font = AppTheme.DefaultFont,
-                ForeColor = AppTheme.TextPrimary
+                ForeColor = AppTheme.TextPrimary,
+                Margin = new Padding(0, 0, AppTheme.SpaceMD, 0)
             };
             rbCustom = new RadioButton
             {
                 Text = "Personalizado",
                 AutoSize = true,
-                Location = new Point(340, 22),
                 Font = AppTheme.DefaultFont,
-                ForeColor = AppTheme.TextPrimary
+                ForeColor = AppTheme.TextPrimary,
+                Margin = new Padding(0, 0, AppTheme.SpaceMD, 0)
             };
             rbProduct.CheckedChanged += (s, e) => ToggleMode();
             rbMaterial.CheckedChanged += (s, e) => ToggleMode();
             rbArea.CheckedChanged += (s, e) => ToggleMode();
             rbCustom.CheckedChanged += (s, e) => ToggleMode();
+            radioFlow.Controls.AddRange(new Control[] { rbProduct, rbMaterial, rbArea, rbCustom });
 
-            // --- Product mode panel (existing) ---
-            pnlProductMode = new Panel
+            // -- Product mode panel --
+            pnlProductMode = new Panel { Dock = DockStyle.Fill };
+            var prodFlow = new FlowLayoutPanel
             {
-                Location = new Point(5, 42),
-                Size = new Size(620, 30)
+                Dock = DockStyle.Top,
+                Height = 30,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                BackColor = Color.Transparent
             };
-
-            var lblProduct = new Label { Text = "Producto:", AutoSize = true, Location = new Point(5, 5) };
-            lblProduct.Font = AppTheme.DefaultFont;
-            lblProduct.ForeColor = AppTheme.TextPrimary;
-
+            var lblProduct = new Label
+            {
+                Text = "Producto:",
+                AutoSize = true,
+                Font = AppTheme.DefaultFont,
+                ForeColor = AppTheme.TextPrimary,
+                Margin = new Padding(0, 4, AppTheme.SpaceSM, 0)
+            };
             cmbProduct = new ComboBox
             {
                 DropDownStyle = ComboBoxStyle.DropDownList,
-                Location = new Point(75, 2),
-                Size = new Size(220, 23)
+                Size = new Size(220, AppTheme.InputHeight),
+                Margin = new Padding(0, 0, AppTheme.SpaceSM, 0)
             };
-            cmbProduct.Font = AppTheme.DefaultFont;
             AppTheme.StyleComboBox(cmbProduct);
             cmbProduct.SelectedIndexChanged += CmbProduct_SelectedIndexChanged;
-
             lblProductPrice = new Label
             {
                 Text = "Precio: -",
                 AutoSize = true,
-                Location = new Point(305, 5),
                 Font = AppTheme.DefaultFont,
-                ForeColor = AppTheme.TextPrimary
+                ForeColor = AppTheme.TextPrimary,
+                Margin = new Padding(0, 4, 0, 0)
             };
+            prodFlow.Controls.AddRange(new Control[] { lblProduct, cmbProduct, lblProductPrice });
+            pnlProductMode.Controls.Add(prodFlow);
 
-            pnlProductMode.Controls.AddRange(new Control[] { lblProduct, cmbProduct, lblProductPrice });
-
-            // --- Material mode panel (existing) ---
-            pnlMaterialMode = new Panel
+            // -- Material mode panel --
+            pnlMaterialMode = new Panel { Dock = DockStyle.Fill, Visible = false };
+            var matRow1 = new FlowLayoutPanel
             {
-                Location = new Point(5, 42),
-                Size = new Size(620, 55),
-                Visible = false
+                Dock = DockStyle.Top,
+                Height = 30,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                BackColor = Color.Transparent
             };
-
-            var lblMat = new Label { Text = "Material:", AutoSize = true, Location = new Point(5, 5), Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary };
+            var lblMat = new Label { Text = "Material:", AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary, Margin = new Padding(0, 4, AppTheme.SpaceSM, 0) };
             cmbMaterial = new ComboBox
             {
                 DropDownStyle = ComboBoxStyle.DropDownList,
-                Location = new Point(75, 2),
-                Size = new Size(150, 23)
+                Size = new Size(150, AppTheme.InputHeight),
+                Margin = new Padding(0, 0, AppTheme.SpaceMD, 0)
             };
             AppTheme.StyleComboBox(cmbMaterial);
             cmbMaterial.SelectedIndexChanged += CmbMaterial_SelectedIndexChanged;
-
-            var lblVar = new Label { Text = "Variante:", AutoSize = true, Location = new Point(235, 5), Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary };
+            var lblVar = new Label { Text = "Variante:", AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary, Margin = new Padding(0, 4, AppTheme.SpaceSM, 0) };
             cmbVariant = new ComboBox
             {
                 DropDownStyle = ComboBoxStyle.DropDownList,
-                Location = new Point(305, 2),
-                Size = new Size(150, 23)
+                Size = new Size(150, AppTheme.InputHeight),
+                Margin = new Padding(0, 0, AppTheme.SpaceSM, 0)
             };
             AppTheme.StyleComboBox(cmbVariant);
             cmbVariant.SelectedIndexChanged += CmbVariant_SelectedIndexChanged;
-
-            var lblOpt = new Label { Text = "Opción:", AutoSize = true, Location = new Point(5, 32), Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary };
-            cmbOption = new ComboBox
-            {
-                DropDownStyle = ComboBoxStyle.DropDownList,
-                Location = new Point(75, 29),
-                Size = new Size(150, 23)
-            };
-            AppTheme.StyleComboBox(cmbOption);
-            cmbOption.SelectedIndexChanged += CmbOption_SelectedIndexChanged;
-
-            lblMaterialPrice = new Label
-            {
-                Text = "Precio: -",
-                AutoSize = true,
-                Location = new Point(235, 32),
-                Font = AppTheme.DefaultFont,
-                ForeColor = AppTheme.TextPrimary
-            };
-
             lblUnit = new Label
             {
                 Text = "",
                 AutoSize = true,
-                Location = new Point(465, 5),
                 Font = AppTheme.SmallFont,
-                ForeColor = AppTheme.TextSecondary
+                ForeColor = AppTheme.TextSecondary,
+                Margin = new Padding(0, 5, 0, 0)
             };
+            matRow1.Controls.AddRange(new Control[] { lblMat, cmbMaterial, lblVar, cmbVariant, lblUnit });
 
-            pnlMaterialMode.Controls.AddRange(new Control[] { lblMat, cmbMaterial, lblVar, cmbVariant, lblOpt, cmbOption, lblMaterialPrice, lblUnit });
+            var matRow2 = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                Height = 30,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                BackColor = Color.Transparent
+            };
+            var lblOpt = new Label { Text = "Opci\u00f3n:", AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary, Margin = new Padding(0, 4, AppTheme.SpaceSM, 0) };
+            cmbOption = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Size = new Size(150, AppTheme.InputHeight),
+                Margin = new Padding(0, 0, AppTheme.SpaceMD, 0)
+            };
+            AppTheme.StyleComboBox(cmbOption);
+            cmbOption.SelectedIndexChanged += CmbOption_SelectedIndexChanged;
+            lblMaterialPrice = new Label
+            {
+                Text = "Precio: -",
+                AutoSize = true,
+                Font = AppTheme.DefaultFont,
+                ForeColor = AppTheme.TextPrimary,
+                Margin = new Padding(0, 4, 0, 0)
+            };
+            matRow2.Controls.AddRange(new Control[] { lblOpt, cmbOption, lblMaterialPrice });
+            // Add matRow2 before matRow1 so docking resolves: matRow1 on top, matRow2 below
+            pnlMaterialMode.Controls.Add(matRow2);
+            pnlMaterialMode.Controls.Add(matRow1);
 
-            // --- Area mode panel (NEW) ---
+            // -- Area and Custom mode panels --
             BuildAreaPanel();
-
-            // --- Custom mode panel (NEW) ---
             BuildCustomPanel();
 
+            // Mode container: all mode panels overlap, only one visible at a time
+            var modeContainer = new Panel { Dock = DockStyle.Fill };
+            modeContainer.Controls.AddRange(new Control[] { pnlProductMode, pnlMaterialMode, pnlAreaMode, pnlCustomMode });
+
             // Quantity + Add button row
+            var addRow = new Panel
+            {
+                Dock = DockStyle.Bottom,
+                Height = AppTheme.FormRowHeight + AppTheme.SpaceSM
+            };
+            var addRowFlow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false
+            };
             var lblQuantity = new Label
             {
                 Text = "Cantidad:",
                 AutoSize = true,
-                Location = new Point(10, 177),
                 Font = AppTheme.DefaultFont,
-                ForeColor = AppTheme.TextPrimary
+                ForeColor = AppTheme.TextPrimary,
+                Margin = new Padding(0, 6, AppTheme.SpaceSM, 0)
             };
             nudQuantity = new NumericUpDown
             {
-                Location = new Point(80, 174),
-                Size = new Size(100, 23),
+                Size = new Size(100, AppTheme.InputHeight),
                 Minimum = 0.01m,
                 Maximum = 99999,
                 DecimalPlaces = 2,
-                Value = 1
+                Value = 1,
+                Margin = new Padding(0, 0, AppTheme.SpaceLG, 0)
             };
             nudQuantity.Font = AppTheme.DefaultFont;
             AppTheme.StyleNumericUpDown(nudQuantity);
-
-            var btnAddItem = new Button { Text = "Agregar", Size = new Size(90, 30), Location = new Point(540, 172) };
-            btnAddItem.Font = AppTheme.DefaultFont;
+            var btnAddItem = AppTheme.CreateButton("Agregar", AppTheme.ButtonWidthSM);
             AppTheme.StylePrimaryButton(btnAddItem);
             btnAddItem.Click += BtnAddItem_Click;
+            addRowFlow.Controls.AddRange(new Control[] { lblQuantity, nudQuantity, btnAddItem });
+            addRow.Controls.Add(addRowFlow);
 
-            grpAddItem.Controls.AddRange(new Control[]
-            {
-                rbProduct, rbMaterial, rbArea, rbCustom,
-                pnlProductMode, pnlMaterialMode, pnlAreaMode, pnlCustomMode,
-                lblQuantity, nudQuantity, btnAddItem
-            });
+            // Assemble GroupBox (Fill first, then Bottom, then Top for correct dock order)
+            grpAddItem.Controls.Add(modeContainer);
+            grpAddItem.Controls.Add(addRow);
+            grpAddItem.Controls.Add(radioFlow);
+            AppTheme.StyleGroupBoxChildren(grpAddItem);
 
-            // Bottom bar
-            var bottomBar = new Panel
-            {
-                Dock = DockStyle.Bottom,
-                Height = 55,
-                BackColor = AppTheme.Background,
-                Padding = new Padding(12, 8, 12, 8)
-            };
+            // -- Bottom bar --
+            var (bottomBar, leftFlow, rightFlow) = AppTheme.CreateButtonBar();
 
-            // Left section — remove button
-            var btnRemoveItem = new Button { Text = "Quitar Seleccionado", Size = new Size(150, 32), Location = new Point(0, 1) };
+            var btnRemoveItem = AppTheme.CreateButton("Quitar Seleccionado", 150);
             AppTheme.StyleSecondaryButton(btnRemoveItem);
             btnRemoveItem.Click += BtnRemoveItem_Click;
-
-            var leftPanel = new Panel { Dock = DockStyle.Left, Width = 165, BackColor = AppTheme.Background };
-            leftPanel.Controls.Add(btnRemoveItem);
-
-            // Right section — total, save, back (using Dock=Right sub-panel)
-            var rightPanel = new Panel { Dock = DockStyle.Right, Width = 380, BackColor = AppTheme.Background };
+            leftFlow.Controls.Add(btnRemoveItem);
 
             lblTotal = new Label
             {
                 AutoSize = true,
-                Location = new Point(0, 4),
-                Text = "Total: $0.00"
+                Text = "Total: $0.00",
+                Margin = new Padding(0, 4, AppTheme.SpaceMD, 0)
             };
             AppTheme.StyleTotalLabel(lblTotal);
 
-            var btnSave = new Button { Text = "Guardar", Size = new Size(110, 32), Location = new Point(170, 1) };
+            var btnSave = AppTheme.CreateButton("Guardar", AppTheme.ButtonWidthMD);
             AppTheme.StylePrimaryButton(btnSave);
             btnSave.Click += BtnSave_Click;
 
-            var btnBack = new Button { Text = "Volver", Size = new Size(80, 32), Location = new Point(290, 1) };
+            var btnBack = AppTheme.CreateButton("Volver", AppTheme.ButtonWidthSM);
             AppTheme.StyleSecondaryButton(btnBack);
             btnBack.Click += (s, e) => _navigator.GoBack();
 
-            rightPanel.Controls.AddRange(new Control[] { lblTotal, btnSave, btnBack });
+            // Right flow is RightToLeft: first added = rightmost
+            rightFlow.Controls.AddRange(new Control[] { btnBack, btnSave, lblTotal });
 
-            bottomBar.Controls.Add(leftPanel);
-            bottomBar.Controls.Add(rightPanel);
-
-            // Items grid (editable for Descripción and Subtotal)
+            // -- Items grid --
             dgvItems = new DataGridView
             {
                 Dock = DockStyle.Fill,
@@ -336,61 +401,74 @@ namespace SistemaCotizaciones.Views
             AppTheme.StyleDataGridView(dgvItems);
             dgvItems.CellEndEdit += DgvItems_CellEndEdit;
 
-            // Add in correct order for docking
+            // Docking order: Fill first, Bottom, Top (last added = docked first)
             Controls.Add(dgvItems);
             Controls.Add(bottomBar);
             Controls.Add(grpAddItem);
-            Controls.Add(topPanel);
+            Controls.Add(topTable);
         }
 
         private void BuildAreaPanel()
         {
-            pnlAreaMode = new Panel
-            {
-                Location = new Point(5, 42),
-                Size = new Size(620, 130),
-                Visible = false
-            };
+            pnlAreaMode = new Panel { Dock = DockStyle.Fill, Visible = false };
 
+            // Checkbox row
+            var chkFlow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                Height = 24,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                BackColor = Color.Transparent
+            };
             chkAreaUseMaterial = new CheckBox
             {
-                Text = "Usar material del catálogo",
+                Text = "Usar material del cat\u00e1logo",
                 AutoSize = true,
-                Location = new Point(5, 3),
                 Checked = true,
                 Font = AppTheme.DefaultFont,
                 ForeColor = AppTheme.TextPrimary
             };
             chkAreaUseMaterial.CheckedChanged += (s, e) => ToggleAreaMaterialMode();
+            chkFlow.Controls.Add(chkAreaUseMaterial);
 
             // Material selection sub-panel
-            pnlAreaMaterial = new Panel { Location = new Point(0, 25), Size = new Size(620, 30) };
-
-            var lblAM = new Label { Text = "Material:", AutoSize = true, Location = new Point(5, 5), Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary };
-            cmbAreaMaterial = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Location = new Point(75, 2), Size = new Size(130, 23) };
+            pnlAreaMaterial = new Panel { Dock = DockStyle.Top, Height = 30 };
+            var matFlow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                BackColor = Color.Transparent
+            };
+            var lblAM = new Label { Text = "Material:", AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary, Margin = new Padding(0, 4, AppTheme.SpaceSM, 0) };
+            cmbAreaMaterial = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Size = new Size(130, AppTheme.InputHeight), Margin = new Padding(0, 0, AppTheme.SpaceSM, 0) };
             AppTheme.StyleComboBox(cmbAreaMaterial);
             cmbAreaMaterial.SelectedIndexChanged += CmbAreaMaterial_SelectedIndexChanged;
-
-            var lblAV = new Label { Text = "Var:", AutoSize = true, Location = new Point(215, 5), Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary };
-            cmbAreaVariant = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Location = new Point(245, 2), Size = new Size(130, 23) };
+            var lblAV = new Label { Text = "Var:", AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary, Margin = new Padding(0, 4, AppTheme.SpaceSM, 0) };
+            cmbAreaVariant = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Size = new Size(130, AppTheme.InputHeight), Margin = new Padding(0, 0, AppTheme.SpaceSM, 0) };
             AppTheme.StyleComboBox(cmbAreaVariant);
             cmbAreaVariant.SelectedIndexChanged += CmbAreaVariant_SelectedIndexChanged;
-
-            var lblAO = new Label { Text = "Opc:", AutoSize = true, Location = new Point(385, 5), Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary };
-            cmbAreaOption = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Location = new Point(420, 2), Size = new Size(130, 23) };
+            var lblAO = new Label { Text = "Opc:", AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary, Margin = new Padding(0, 4, AppTheme.SpaceSM, 0) };
+            cmbAreaOption = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Size = new Size(130, AppTheme.InputHeight) };
             AppTheme.StyleComboBox(cmbAreaOption);
             cmbAreaOption.SelectedIndexChanged += (s, e) => RecalculateAreaPreview();
-
-            pnlAreaMaterial.Controls.AddRange(new Control[] { lblAM, cmbAreaMaterial, lblAV, cmbAreaVariant, lblAO, cmbAreaOption });
+            matFlow.Controls.AddRange(new Control[] { lblAM, cmbAreaMaterial, lblAV, cmbAreaVariant, lblAO, cmbAreaOption });
+            pnlAreaMaterial.Controls.Add(matFlow);
 
             // Manual price sub-panel
-            pnlAreaManual = new Panel { Location = new Point(0, 25), Size = new Size(620, 30), Visible = false };
-
-            var lblManPrice = new Label { Text = "Precio/m²:", AutoSize = true, Location = new Point(5, 5), Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary };
+            pnlAreaManual = new Panel { Dock = DockStyle.Top, Height = 30, Visible = false };
+            var manFlow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                BackColor = Color.Transparent
+            };
+            var lblManPrice = new Label { Text = "Precio/m\u00b2:", AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary, Margin = new Padding(0, 4, AppTheme.SpaceSM, 0) };
             nudAreaPricePerUnit = new NumericUpDown
             {
-                Location = new Point(85, 2),
-                Size = new Size(120, 23),
+                Size = new Size(120, AppTheme.InputHeight),
                 Minimum = 0.01m,
                 Maximum = 999999,
                 DecimalPlaces = 2,
@@ -399,102 +477,105 @@ namespace SistemaCotizaciones.Views
             nudAreaPricePerUnit.Font = AppTheme.DefaultFont;
             AppTheme.StyleNumericUpDown(nudAreaPricePerUnit);
             nudAreaPricePerUnit.ValueChanged += (s, e) => RecalculateAreaPreview();
-
-            pnlAreaManual.Controls.AddRange(new Control[] { lblManPrice, nudAreaPricePerUnit });
+            manFlow.Controls.AddRange(new Control[] { lblManPrice, nudAreaPricePerUnit });
+            pnlAreaManual.Controls.Add(manFlow);
 
             // Dimensions row
-            var lblW = new Label { Text = "Ancho (m):", AutoSize = true, Location = new Point(5, 62), Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary };
+            var dimFlow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                Height = 30,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                BackColor = Color.Transparent
+            };
+            var lblW = new Label { Text = "Ancho (m):", AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary, Margin = new Padding(0, 4, AppTheme.SpaceSM, 0) };
             nudWidth = new NumericUpDown
             {
-                Location = new Point(85, 59),
-                Size = new Size(80, 23),
+                Size = new Size(80, AppTheme.InputHeight),
                 Minimum = 0.01m,
                 Maximum = 999,
                 DecimalPlaces = 2,
-                Value = 1
+                Value = 1,
+                Margin = new Padding(0, 0, AppTheme.SpaceMD, 0)
             };
             nudWidth.Font = AppTheme.DefaultFont;
             AppTheme.StyleNumericUpDown(nudWidth);
             nudWidth.ValueChanged += (s, e) => RecalculateAreaPreview();
-
-            var lblH = new Label { Text = "Alto (m):", AutoSize = true, Location = new Point(180, 62), Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary };
+            var lblH = new Label { Text = "Alto (m):", AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary, Margin = new Padding(0, 4, AppTheme.SpaceSM, 0) };
             nudHeight = new NumericUpDown
             {
-                Location = new Point(245, 59),
-                Size = new Size(80, 23),
+                Size = new Size(80, AppTheme.InputHeight),
                 Minimum = 0.01m,
                 Maximum = 999,
                 DecimalPlaces = 2,
-                Value = 1
+                Value = 1,
+                Margin = new Padding(0, 0, AppTheme.SpaceMD, 0)
             };
             nudHeight.Font = AppTheme.DefaultFont;
             AppTheme.StyleNumericUpDown(nudHeight);
             nudHeight.ValueChanged += (s, e) => RecalculateAreaPreview();
-
             lblAreaComputed = new Label
             {
-                Text = "Área: 1.00 m²",
+                Text = "\u00c1rea: 1.00 m\u00b2",
                 AutoSize = true,
-                Location = new Point(340, 62),
                 Font = AppTheme.DefaultFont,
-                ForeColor = AppTheme.TextSecondary
+                ForeColor = AppTheme.TextSecondary,
+                Margin = new Padding(0, 4, 0, 0)
             };
+            dimFlow.Controls.AddRange(new Control[] { lblW, nudWidth, lblH, nudHeight, lblAreaComputed });
 
             // Subtotal preview
             lblAreaSubtotal = new Label
             {
                 Text = "Subtotal: $0.00",
                 AutoSize = true,
-                Location = new Point(5, 92),
                 Font = new Font("Segoe UI", 10F, FontStyle.Bold),
-                ForeColor = AppTheme.Accent
+                ForeColor = AppTheme.Accent,
+                Dock = DockStyle.Top,
+                Padding = new Padding(0, AppTheme.SpaceXS, 0, 0)
             };
 
-            pnlAreaMode.Controls.AddRange(new Control[]
-            {
-                chkAreaUseMaterial, pnlAreaMaterial, pnlAreaManual,
-                lblW, nudWidth, lblH, nudHeight, lblAreaComputed, lblAreaSubtotal
-            });
+            // Assemble (last added = docked first at top)
+            pnlAreaMode.Controls.Add(lblAreaSubtotal);
+            pnlAreaMode.Controls.Add(dimFlow);
+            pnlAreaMode.Controls.Add(pnlAreaManual);
+            pnlAreaMode.Controls.Add(pnlAreaMaterial);
+            pnlAreaMode.Controls.Add(chkFlow);
         }
 
         private void BuildCustomPanel()
         {
-            pnlCustomMode = new Panel
-            {
-                Location = new Point(5, 42),
-                Size = new Size(620, 130),
-                Visible = false
-            };
+            pnlCustomMode = new Panel { Dock = DockStyle.Fill, Visible = false };
 
-            var lblDesc = new Label { Text = "Descripción (cliente):", AutoSize = true, Location = new Point(5, 3), Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary };
-            txtCustomDescription = new TextBox
+            // Description row
+            var descPanel = new Panel { Dock = DockStyle.Top, Height = 28 };
+            var lblDesc = new Label
             {
-                Location = new Point(155, 0),
-                Size = new Size(460, 23)
+                Text = "Descripci\u00f3n (cliente):",
+                AutoSize = false,
+                Width = 155,
+                Dock = DockStyle.Left,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Font = AppTheme.DefaultFont,
+                ForeColor = AppTheme.TextPrimary
             };
+            txtCustomDescription = new TextBox { Dock = DockStyle.Fill };
             AppTheme.StyleTextBox(txtCustomDescription);
+            descPanel.Controls.Add(txtCustomDescription);
+            descPanel.Controls.Add(lblDesc);
 
-            // Cost lines grid
-            dgvCostLines = new DataGridView
+            // Right-side buttons panel
+            var rightPanel = new Panel { Dock = DockStyle.Right, Width = 85 };
+            var rightBtnFlow = new FlowLayoutPanel
             {
-                Location = new Point(5, 28),
-                Size = new Size(440, 95),
-                AllowUserToAddRows = false,
-                AllowUserToDeleteRows = false,
-                RowHeadersVisible = false,
-                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                ScrollBars = ScrollBars.Vertical
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.TopDown,
+                WrapContents = false,
+                Padding = new Padding(AppTheme.SpaceSM, 0, 0, 0)
             };
-            dgvCostLines.Columns.Add(new DataGridViewTextBoxColumn { Name = "Concepto", HeaderText = "Concepto", Width = 260 });
-            dgvCostLines.Columns.Add(new DataGridViewTextBoxColumn { Name = "Monto", HeaderText = "Monto", Width = 120 });
-            dgvCostLines.DefaultCellStyle.Font = AppTheme.DefaultFont;
-            dgvCostLines.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
-            dgvCostLines.ColumnHeadersHeight = 25;
-            dgvCostLines.RowTemplate.Height = 22;
-            dgvCostLines.CellEndEdit += DgvCostLines_CellEndEdit;
 
-            // Add / Remove buttons
-            var btnAddLine = new Button { Text = "+ Línea", Size = new Size(75, 28), Location = new Point(455, 28) };
+            var btnAddLine = new Button { Text = "+ L\u00ednea", Size = new Size(75, AppTheme.InputHeight), Margin = new Padding(0, 0, 0, AppTheme.SpaceXS) };
             AppTheme.StyleSecondaryButton(btnAddLine);
             btnAddLine.Font = AppTheme.SmallFont;
             btnAddLine.Click += (s, e) =>
@@ -503,7 +584,7 @@ namespace SistemaCotizaciones.Views
                 RecalculateCustomTotal();
             };
 
-            var btnRemoveLine = new Button { Text = "- Línea", Size = new Size(75, 28), Location = new Point(455, 60) };
+            var btnRemoveLine = new Button { Text = "- L\u00ednea", Size = new Size(75, AppTheme.InputHeight), Margin = new Padding(0, 0, 0, AppTheme.SpaceXS) };
             AppTheme.StyleSecondaryButton(btnRemoveLine);
             btnRemoveLine.Font = AppTheme.SmallFont;
             btnRemoveLine.Click += (s, e) =>
@@ -519,16 +600,37 @@ namespace SistemaCotizaciones.Views
             {
                 Text = "Total: $0.00",
                 AutoSize = true,
-                Location = new Point(455, 100),
                 Font = new Font("Segoe UI", 9.5F, FontStyle.Bold),
-                ForeColor = AppTheme.Accent
+                ForeColor = AppTheme.Accent,
+                Margin = new Padding(0, AppTheme.SpaceXS, 0, 0)
             };
 
-            pnlCustomMode.Controls.AddRange(new Control[]
+            rightBtnFlow.Controls.AddRange(new Control[] { btnAddLine, btnRemoveLine, lblCustomTotal });
+            rightPanel.Controls.Add(rightBtnFlow);
+
+            // Cost lines grid
+            dgvCostLines = new DataGridView
             {
-                lblDesc, txtCustomDescription, dgvCostLines,
-                btnAddLine, btnRemoveLine, lblCustomTotal
-            });
+                Dock = DockStyle.Fill,
+                AllowUserToAddRows = false,
+                AllowUserToDeleteRows = false,
+                RowHeadersVisible = false,
+                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                ScrollBars = ScrollBars.Vertical,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
+            };
+            dgvCostLines.Columns.Add(new DataGridViewTextBoxColumn { Name = "Concepto", HeaderText = "Concepto", FillWeight = 65 });
+            dgvCostLines.Columns.Add(new DataGridViewTextBoxColumn { Name = "Monto", HeaderText = "Monto", FillWeight = 35 });
+            dgvCostLines.DefaultCellStyle.Font = AppTheme.DefaultFont;
+            dgvCostLines.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
+            dgvCostLines.ColumnHeadersHeight = 25;
+            dgvCostLines.RowTemplate.Height = 22;
+            dgvCostLines.CellEndEdit += DgvCostLines_CellEndEdit;
+
+            // Assemble (Fill first, then Right, then Top)
+            pnlCustomMode.Controls.Add(dgvCostLines);
+            pnlCustomMode.Controls.Add(rightPanel);
+            pnlCustomMode.Controls.Add(descPanel);
         }
 
         private void ToggleMode()
@@ -1019,7 +1121,7 @@ namespace SistemaCotizaciones.Views
             "Fijo" => "Fijo",
             "Material" => "Material",
             "Area" => "Área",
-            "Personalizado" => "Custom",
+            "Personalizado" => "Personalizado",
             _ => pricingType
         };
 
