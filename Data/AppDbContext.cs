@@ -56,6 +56,11 @@ namespace SistemaCotizaciones.Data
                 .WithMany()
                 .HasForeignKey(qi => qi.MaterialOptionId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            // Default PricingType for backward compatibility
+            modelBuilder.Entity<QuoteItem>()
+                .Property(qi => qi.PricingType)
+                .HasDefaultValue("Fijo");
         }
     }
 }

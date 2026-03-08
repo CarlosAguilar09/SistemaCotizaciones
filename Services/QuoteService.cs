@@ -49,7 +49,9 @@ namespace SistemaCotizaciones.Services
                     Quantity = item.Quantity,
                     UnitPrice = item.UnitPrice,
                     Subtotal = item.Subtotal,
-                    Description = item.Description
+                    Description = item.Description,
+                    PricingType = item.PricingType,
+                    CalculationData = item.CalculationData
                 });
             }
 
@@ -77,7 +79,9 @@ namespace SistemaCotizaciones.Services
                     Quantity = item.Quantity,
                     UnitPrice = item.UnitPrice,
                     Subtotal = item.Subtotal,
-                    Description = item.Description
+                    Description = item.Description,
+                    PricingType = item.PricingType,
+                    CalculationData = item.CalculationData
                 });
             }
         }

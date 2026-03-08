@@ -21,5 +21,15 @@ namespace SistemaCotizaciones.Services
                 item.Subtotal = item.Quantity * item.UnitPrice;
             }
         }
+
+        public decimal CalculateAreaSubtotal(decimal width, decimal height, decimal pricePerUnit)
+        {
+            return width * height * pricePerUnit;
+        }
+
+        public decimal CalculateCustomSubtotal(List<(string Label, decimal Amount)> lines)
+        {
+            return lines.Sum(l => l.Amount);
+        }
     }
 }

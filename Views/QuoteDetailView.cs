@@ -78,8 +78,12 @@ namespace SistemaCotizaciones.Views
             AppTheme.StylePrimaryButton(btnExportPdf);
             btnExportPdf.Click += BtnExportPdf_Click;
 
-            var leftPanel = new Panel { Dock = DockStyle.Left, Width = 145, BackColor = AppTheme.Background };
-            leftPanel.Controls.Add(btnExportPdf);
+            var btnViewCalc = new Button { Text = "Ver Cálculo", Size = new Size(110, 32), Location = new Point(140, 1) };
+            AppTheme.StyleSecondaryButton(btnViewCalc);
+            btnViewCalc.Click += BtnViewCalc_Click;
+
+            var leftPanel = new Panel { Dock = DockStyle.Left, Width = 270, BackColor = AppTheme.Background };
+            leftPanel.Controls.AddRange(new Control[] { btnExportPdf, btnViewCalc });
 
             // Right section — total + back (using Dock=Right sub-panel)
             var rightPanel = new Panel { Dock = DockStyle.Right, Width = 310, BackColor = AppTheme.Background };
@@ -147,7 +151,8 @@ namespace SistemaCotizaciones.Views
                 Descripción = i.Description,
                 Cantidad = i.Quantity % 1 == 0 ? i.Quantity.ToString("0") : i.Quantity.ToString("0.##"),
                 PrecioUnitario = i.UnitPrice,
-                Subtotal = i.Subtotal
+                Subtotal = i.Subtotal,
+                Tipo = GetPricingTypeLabel(i.PricingType)
             }).ToList();
 
             dgvItems.DataSource = displayItems;
@@ -160,6 +165,36 @@ namespace SistemaCotizaciones.Views
                 colPrice.HeaderText = "Precio Unit.";
             if (dgvItems.Columns["Subtotal"] is DataGridViewColumn colSub)
                 colSub.HeaderText = "Subtotal";
+            if (dgvItems.Columns["Tipo"] is DataGridViewColumn colType)
+                colType.HeaderText = "Tipo";
+        }
+
+        private static string GetPricingTypeLabel(string pricingType) => pricingType switch
+        {
+            "Fijo" => "Fijo",
+            "Material" => "Material",
+            "Area" => "Área",
+            "Personalizado" => "Custom",
+            _ => pricingType
+        };
+
+        private void BtnViewCalc_Click(object? sender, EventArgs e)
+        {
+            if (dgvItems.CurrentRow == null || dgvItems.CurrentRow.Index < 0)
+            {
+                MessageBox.Show("Seleccione un item para ver su cálculo.", "Validación",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            int index = dgvItems.CurrentRow.Index;
+            if (index < 0 || index >= _items.Count) return;
+
+            var item = _items[index];
+            string summary = CalculationDetailHelper.GetReadableSummary(item.PricingType, item.CalculationData);
+
+            MessageBox.Show(summary, $"Detalle de Cálculo — {item.Description}",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void BtnExportPdf_Click(object? sender, EventArgs e)
