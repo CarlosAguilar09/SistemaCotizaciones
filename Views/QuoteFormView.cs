@@ -9,6 +9,7 @@ namespace SistemaCotizaciones.Views
         private readonly Navigator _navigator;
         private readonly QuoteService _quoteService = new();
         private readonly QuoteCalculationService _calcService = new();
+        private readonly AreaPricingPresetService _presetService = new();
 
         private readonly int? _quoteId;
         private readonly List<QuoteItem> _items = new();
@@ -50,6 +51,18 @@ namespace SistemaCotizaciones.Views
         private Label lblAreaComputed = null!;
         private Label lblAreaSubtotal = null!;
 
+        // Area pieces sub-mode controls
+        private RadioButton rbAreaDirect = null!;
+        private RadioButton rbAreaPieces = null!;
+        private Panel pnlAreaDirect = null!;
+        private Panel pnlAreaPiecesPanel = null!;
+        private ComboBox cmbAreaPreset = null!;
+        private TextBox txtAreaText = null!;
+        private NumericUpDown nudAreaPieceCount = null!;
+        private NumericUpDown nudAreaPieceHeight = null!;
+        private NumericUpDown nudAreaWidthFactor = null!;
+        private Label lblAreaPiecesPreview = null!;
+
         // Custom mode controls
         private Panel pnlCustomMode = null!;
         private TextBox txtCustomDescription = null!;
@@ -62,6 +75,7 @@ namespace SistemaCotizaciones.Views
 
         private List<Material> _materials = new();
         private List<Material> _areaMaterials = new();
+        private List<AreaPricingPreset> _areaPresets = new();
 
         public QuoteFormView(Navigator navigator, int? quoteId = null)
         {
@@ -412,79 +426,40 @@ namespace SistemaCotizaciones.Views
         {
             pnlAreaMode = new Panel { Dock = DockStyle.Fill, Visible = false };
 
-            // Checkbox row
-            var chkFlow = new FlowLayoutPanel
+            // --- Calculation method toggle ---
+            var methodFlow = new FlowLayoutPanel
             {
                 Dock = DockStyle.Top,
-                Height = 24,
+                Height = 28,
                 FlowDirection = FlowDirection.LeftToRight,
                 WrapContents = false,
                 BackColor = Color.Transparent
             };
-            chkAreaUseMaterial = new CheckBox
+            rbAreaDirect = new RadioButton
             {
-                Text = "Usar material del cat\u00e1logo",
+                Text = "Dimensiones directas",
                 AutoSize = true,
                 Checked = true,
                 Font = AppTheme.DefaultFont,
+                ForeColor = AppTheme.TextPrimary,
+                Margin = new Padding(0, 0, AppTheme.SpaceMD, 0)
+            };
+            rbAreaPieces = new RadioButton
+            {
+                Text = "Por piezas",
+                AutoSize = true,
+                Font = AppTheme.DefaultFont,
                 ForeColor = AppTheme.TextPrimary
             };
-            chkAreaUseMaterial.CheckedChanged += (s, e) => ToggleAreaMaterialMode();
-            chkFlow.Controls.Add(chkAreaUseMaterial);
+            rbAreaDirect.CheckedChanged += (s, e) => ToggleAreaCalcMethod();
+            rbAreaPieces.CheckedChanged += (s, e) => ToggleAreaCalcMethod();
+            methodFlow.Controls.AddRange(new Control[] { rbAreaDirect, rbAreaPieces });
 
-            // Material selection sub-panel
-            pnlAreaMaterial = new Panel { Dock = DockStyle.Top, Height = 30 };
-            var matFlow = new FlowLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                FlowDirection = FlowDirection.LeftToRight,
-                WrapContents = false,
-                BackColor = Color.Transparent
-            };
-            var lblAM = new Label { Text = "Material:", AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary, Margin = new Padding(0, 4, AppTheme.SpaceSM, 0) };
-            cmbAreaMaterial = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Size = new Size(130, AppTheme.InputHeight), Margin = new Padding(0, 0, AppTheme.SpaceSM, 0) };
-            AppTheme.StyleComboBox(cmbAreaMaterial);
-            cmbAreaMaterial.SelectedIndexChanged += CmbAreaMaterial_SelectedIndexChanged;
-            var lblAV = new Label { Text = "Var:", AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary, Margin = new Padding(0, 4, AppTheme.SpaceSM, 0) };
-            cmbAreaVariant = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Size = new Size(130, AppTheme.InputHeight), Margin = new Padding(0, 0, AppTheme.SpaceSM, 0) };
-            AppTheme.StyleComboBox(cmbAreaVariant);
-            cmbAreaVariant.SelectedIndexChanged += CmbAreaVariant_SelectedIndexChanged;
-            var lblAO = new Label { Text = "Opc:", AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary, Margin = new Padding(0, 4, AppTheme.SpaceSM, 0) };
-            cmbAreaOption = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Size = new Size(130, AppTheme.InputHeight) };
-            AppTheme.StyleComboBox(cmbAreaOption);
-            cmbAreaOption.SelectedIndexChanged += (s, e) => RecalculateAreaPreview();
-            matFlow.Controls.AddRange(new Control[] { lblAM, cmbAreaMaterial, lblAV, cmbAreaVariant, lblAO, cmbAreaOption });
-            pnlAreaMaterial.Controls.Add(matFlow);
-
-            // Manual price sub-panel
-            pnlAreaManual = new Panel { Dock = DockStyle.Top, Height = 30, Visible = false };
-            var manFlow = new FlowLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                FlowDirection = FlowDirection.LeftToRight,
-                WrapContents = false,
-                BackColor = Color.Transparent
-            };
-            var lblManPrice = new Label { Text = "Precio/m\u00b2:", AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary, Margin = new Padding(0, 4, AppTheme.SpaceSM, 0) };
-            nudAreaPricePerUnit = new NumericUpDown
-            {
-                Size = new Size(120, AppTheme.InputHeight),
-                Minimum = 0.01m,
-                Maximum = 999999,
-                DecimalPlaces = 2,
-                Value = 100
-            };
-            nudAreaPricePerUnit.Font = AppTheme.DefaultFont;
-            AppTheme.StyleNumericUpDown(nudAreaPricePerUnit);
-            nudAreaPricePerUnit.ValueChanged += (s, e) => RecalculateAreaPreview();
-            manFlow.Controls.AddRange(new Control[] { lblManPrice, nudAreaPricePerUnit });
-            pnlAreaManual.Controls.Add(manFlow);
-
-            // Dimensions row
+            // --- Direct dimensions sub-panel (existing) ---
+            pnlAreaDirect = new Panel { Dock = DockStyle.Top, Height = 30 };
             var dimFlow = new FlowLayoutPanel
             {
-                Dock = DockStyle.Top,
-                Height = 30,
+                Dock = DockStyle.Fill,
                 FlowDirection = FlowDirection.LeftToRight,
                 WrapContents = false,
                 BackColor = Color.Transparent
@@ -524,8 +499,175 @@ namespace SistemaCotizaciones.Views
                 Margin = new Padding(0, 4, 0, 0)
             };
             dimFlow.Controls.AddRange(new Control[] { lblW, nudWidth, lblH, nudHeight, lblAreaComputed });
+            pnlAreaDirect.Controls.Add(dimFlow);
 
-            // Subtotal preview
+            // --- Pieces sub-panel (new) ---
+            pnlAreaPiecesPanel = new Panel { Dock = DockStyle.Top, Height = 90, Visible = false };
+
+            // Row 1: Preset
+            var presetFlow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                Height = 30,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                BackColor = Color.Transparent
+            };
+            var lblPreset = new Label { Text = "Est\u00e1ndar:", AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary, Margin = new Padding(0, 4, AppTheme.SpaceSM, 0) };
+            cmbAreaPreset = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Size = new Size(200, AppTheme.InputHeight) };
+            AppTheme.StyleComboBox(cmbAreaPreset);
+            cmbAreaPreset.SelectedIndexChanged += CmbAreaPreset_SelectedIndexChanged;
+            presetFlow.Controls.AddRange(new Control[] { lblPreset, cmbAreaPreset });
+
+            // Row 2: Text + Piece count
+            var textFlow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                Height = 30,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                BackColor = Color.Transparent
+            };
+            var lblText = new Label { Text = "Texto:", AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary, Margin = new Padding(0, 4, AppTheme.SpaceSM, 0) };
+            txtAreaText = new TextBox { Size = new Size(150, AppTheme.InputHeight), Margin = new Padding(0, 0, AppTheme.SpaceMD, 0) };
+            AppTheme.StyleTextBox(txtAreaText);
+            txtAreaText.TextChanged += TxtAreaText_TextChanged;
+            var lblCount = new Label { Text = "N\u00ba piezas:", AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary, Margin = new Padding(0, 4, AppTheme.SpaceSM, 0) };
+            nudAreaPieceCount = new NumericUpDown
+            {
+                Size = new Size(70, AppTheme.InputHeight),
+                Minimum = 1,
+                Maximum = 999,
+                Value = 1
+            };
+            nudAreaPieceCount.Font = AppTheme.DefaultFont;
+            AppTheme.StyleNumericUpDown(nudAreaPieceCount);
+            nudAreaPieceCount.ValueChanged += (s, e) => RecalculateAreaPreview();
+            textFlow.Controls.AddRange(new Control[] { lblText, txtAreaText, lblCount, nudAreaPieceCount });
+
+            // Row 3: Piece height + Width factor
+            var paramsFlow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                Height = 30,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                BackColor = Color.Transparent
+            };
+            var lblPH = new Label { Text = "Altura (m):", AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary, Margin = new Padding(0, 4, AppTheme.SpaceSM, 0) };
+            nudAreaPieceHeight = new NumericUpDown
+            {
+                Size = new Size(80, AppTheme.InputHeight),
+                Minimum = 0.01m,
+                Maximum = 999,
+                DecimalPlaces = 2,
+                Value = 0.50m,
+                Margin = new Padding(0, 0, AppTheme.SpaceMD, 0)
+            };
+            nudAreaPieceHeight.Font = AppTheme.DefaultFont;
+            AppTheme.StyleNumericUpDown(nudAreaPieceHeight);
+            nudAreaPieceHeight.ValueChanged += (s, e) => RecalculateAreaPreview();
+            var lblFactor = new Label { Text = "Factor ancho:", AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary, Margin = new Padding(0, 4, AppTheme.SpaceSM, 0) };
+            nudAreaWidthFactor = new NumericUpDown
+            {
+                Size = new Size(80, AppTheme.InputHeight),
+                Minimum = 0.01m,
+                Maximum = 10m,
+                DecimalPlaces = 2,
+                Increment = 0.05m,
+                Value = 0.60m
+            };
+            nudAreaWidthFactor.Font = AppTheme.DefaultFont;
+            AppTheme.StyleNumericUpDown(nudAreaWidthFactor);
+            nudAreaWidthFactor.ValueChanged += (s, e) => RecalculateAreaPreview();
+            paramsFlow.Controls.AddRange(new Control[] { lblPH, nudAreaPieceHeight, lblFactor, nudAreaWidthFactor });
+
+            // Assemble pieces panel (last added = docked first at top)
+            pnlAreaPiecesPanel.Controls.Add(paramsFlow);
+            pnlAreaPiecesPanel.Controls.Add(textFlow);
+            pnlAreaPiecesPanel.Controls.Add(presetFlow);
+
+            // --- Price source: material checkbox (shared) ---
+            var chkFlow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                Height = 24,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                BackColor = Color.Transparent
+            };
+            chkAreaUseMaterial = new CheckBox
+            {
+                Text = "Usar material del cat\u00e1logo",
+                AutoSize = true,
+                Checked = true,
+                Font = AppTheme.DefaultFont,
+                ForeColor = AppTheme.TextPrimary
+            };
+            chkAreaUseMaterial.CheckedChanged += (s, e) => ToggleAreaMaterialMode();
+            chkFlow.Controls.Add(chkAreaUseMaterial);
+
+            // Material selection sub-panel (shared)
+            pnlAreaMaterial = new Panel { Dock = DockStyle.Top, Height = 30 };
+            var matFlow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                BackColor = Color.Transparent
+            };
+            var lblAM = new Label { Text = "Material:", AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary, Margin = new Padding(0, 4, AppTheme.SpaceSM, 0) };
+            cmbAreaMaterial = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Size = new Size(130, AppTheme.InputHeight), Margin = new Padding(0, 0, AppTheme.SpaceSM, 0) };
+            AppTheme.StyleComboBox(cmbAreaMaterial);
+            cmbAreaMaterial.SelectedIndexChanged += CmbAreaMaterial_SelectedIndexChanged;
+            var lblAV = new Label { Text = "Var:", AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary, Margin = new Padding(0, 4, AppTheme.SpaceSM, 0) };
+            cmbAreaVariant = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Size = new Size(130, AppTheme.InputHeight), Margin = new Padding(0, 0, AppTheme.SpaceSM, 0) };
+            AppTheme.StyleComboBox(cmbAreaVariant);
+            cmbAreaVariant.SelectedIndexChanged += CmbAreaVariant_SelectedIndexChanged;
+            var lblAO = new Label { Text = "Opc:", AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary, Margin = new Padding(0, 4, AppTheme.SpaceSM, 0) };
+            cmbAreaOption = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Size = new Size(130, AppTheme.InputHeight) };
+            AppTheme.StyleComboBox(cmbAreaOption);
+            cmbAreaOption.SelectedIndexChanged += (s, e) => RecalculateAreaPreview();
+            matFlow.Controls.AddRange(new Control[] { lblAM, cmbAreaMaterial, lblAV, cmbAreaVariant, lblAO, cmbAreaOption });
+            pnlAreaMaterial.Controls.Add(matFlow);
+
+            // Manual price sub-panel (shared)
+            pnlAreaManual = new Panel { Dock = DockStyle.Top, Height = 30, Visible = false };
+            var manFlow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                BackColor = Color.Transparent
+            };
+            var lblManPrice = new Label { Text = "Precio/m\u00b2:", AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary, Margin = new Padding(0, 4, AppTheme.SpaceSM, 0) };
+            nudAreaPricePerUnit = new NumericUpDown
+            {
+                Size = new Size(120, AppTheme.InputHeight),
+                Minimum = 0.01m,
+                Maximum = 999999,
+                DecimalPlaces = 2,
+                Value = 100
+            };
+            nudAreaPricePerUnit.Font = AppTheme.DefaultFont;
+            AppTheme.StyleNumericUpDown(nudAreaPricePerUnit);
+            nudAreaPricePerUnit.ValueChanged += (s, e) => RecalculateAreaPreview();
+            manFlow.Controls.AddRange(new Control[] { lblManPrice, nudAreaPricePerUnit });
+            pnlAreaManual.Controls.Add(manFlow);
+
+            // Pieces preview (only visible in pieces mode)
+            lblAreaPiecesPreview = new Label
+            {
+                Text = "",
+                AutoSize = true,
+                Font = AppTheme.DefaultFont,
+                ForeColor = AppTheme.TextSecondary,
+                Dock = DockStyle.Top,
+                Visible = false,
+                Padding = new Padding(0, AppTheme.SpaceXS, 0, 0)
+            };
+
+            // Subtotal preview (shared)
             lblAreaSubtotal = new Label
             {
                 Text = "Subtotal: $0.00",
@@ -538,10 +680,13 @@ namespace SistemaCotizaciones.Views
 
             // Assemble (last added = docked first at top)
             pnlAreaMode.Controls.Add(lblAreaSubtotal);
-            pnlAreaMode.Controls.Add(dimFlow);
+            pnlAreaMode.Controls.Add(lblAreaPiecesPreview);
             pnlAreaMode.Controls.Add(pnlAreaManual);
             pnlAreaMode.Controls.Add(pnlAreaMaterial);
             pnlAreaMode.Controls.Add(chkFlow);
+            pnlAreaMode.Controls.Add(pnlAreaPiecesPanel);
+            pnlAreaMode.Controls.Add(pnlAreaDirect);
+            pnlAreaMode.Controls.Add(methodFlow);
         }
 
         private void BuildCustomPanel()
@@ -648,6 +793,22 @@ namespace SistemaCotizaciones.Views
             RecalculateAreaPreview();
         }
 
+        private void ToggleAreaCalcMethod()
+        {
+            bool isDirect = rbAreaDirect.Checked;
+            pnlAreaDirect.Visible = isDirect;
+            pnlAreaPiecesPanel.Visible = !isDirect;
+            lblAreaPiecesPreview.Visible = !isDirect;
+
+            // In pieces mode, default to manual price (preset fills it)
+            if (!isDirect && chkAreaUseMaterial.Checked)
+            {
+                chkAreaUseMaterial.Checked = false;
+            }
+
+            RecalculateAreaPreview();
+        }
+
         private void LoadData()
         {
             // Load products
@@ -664,6 +825,11 @@ namespace SistemaCotizaciones.Views
             _areaMaterials = _quoteService.GetAvailableMaterials();
             cmbAreaMaterial.DisplayMember = "Name";
             cmbAreaMaterial.DataSource = _areaMaterials;
+
+            // Load presets for Area pieces mode
+            _areaPresets = _presetService.GetAll();
+            cmbAreaPreset.DisplayMember = "Name";
+            cmbAreaPreset.DataSource = _areaPresets;
 
             if (_quoteId.HasValue)
             {
@@ -764,16 +930,52 @@ namespace SistemaCotizaciones.Views
             RecalculateAreaPreview();
         }
 
+        private void CmbAreaPreset_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            if (cmbAreaPreset.SelectedItem is AreaPricingPreset preset)
+            {
+                nudAreaWidthFactor.Value = preset.WidthFactor;
+                nudAreaPricePerUnit.Value = preset.PricePerSquareMeter;
+                chkAreaUseMaterial.Checked = false;
+            }
+            RecalculateAreaPreview();
+        }
+
+        private void TxtAreaText_TextChanged(object? sender, EventArgs e)
+        {
+            int count = txtAreaText.Text.Replace(" ", "").Length;
+            if (count > 0)
+                nudAreaPieceCount.Value = count;
+            RecalculateAreaPreview();
+        }
+
         private void RecalculateAreaPreview()
         {
-            decimal width = nudWidth.Value;
-            decimal height = nudHeight.Value;
-            decimal area = width * height;
-            lblAreaComputed.Text = $"Área: {area:0.##} m²";
-
             decimal pricePerUnit = GetAreaPricePerUnit();
-            decimal subtotal = _calcService.CalculateAreaSubtotal(width, height, pricePerUnit);
-            lblAreaSubtotal.Text = $"Subtotal: {subtotal:C2}";
+
+            if (rbAreaDirect.Checked)
+            {
+                decimal width = nudWidth.Value;
+                decimal height = nudHeight.Value;
+                decimal area = width * height;
+                lblAreaComputed.Text = $"\u00c1rea: {area:0.##} m\u00b2";
+
+                decimal subtotal = _calcService.CalculateAreaSubtotal(width, height, pricePerUnit);
+                lblAreaSubtotal.Text = $"Subtotal: {subtotal:C2}";
+            }
+            else
+            {
+                decimal pieceHeight = nudAreaPieceHeight.Value;
+                decimal widthFactor = nudAreaWidthFactor.Value;
+                int pieceCount = (int)nudAreaPieceCount.Value;
+                decimal pieceWidth = pieceHeight * widthFactor;
+                decimal areaPerPiece = pieceHeight * pieceWidth;
+                decimal totalArea = areaPerPiece * pieceCount;
+                decimal subtotal = _calcService.CalculateAreaPiecesSubtotal(pieceHeight, widthFactor, pieceCount, pricePerUnit);
+
+                lblAreaPiecesPreview.Text = $"Ancho est.: {pieceWidth:0.##} m  |  \u00c1rea/pieza: {areaPerPiece:0.####} m\u00b2  |  \u00c1rea total: {totalArea:0.####} m\u00b2";
+                lblAreaSubtotal.Text = $"Subtotal: {subtotal:C2}";
+            }
         }
 
         private decimal GetAreaPricePerUnit()
@@ -907,45 +1109,98 @@ namespace SistemaCotizaciones.Views
             decimal pricePerUnit = GetAreaPricePerUnit();
             if (pricePerUnit <= 0)
             {
-                MessageBox.Show("Seleccione un material o ingrese un precio por m².", "Validación",
+                MessageBox.Show("Seleccione un material o ingrese un precio por m\u00b2.", "Validaci\u00f3n",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            decimal width = nudWidth.Value;
-            decimal height = nudHeight.Value;
-            decimal area = width * height;
-            decimal unitPrice = area * pricePerUnit;
-            decimal subtotal = _calcService.CalculateSubtotal(quantity, unitPrice);
-
-            string materialLabel = GetAreaMaterialLabel();
-            string description = !string.IsNullOrEmpty(materialLabel)
-                ? $"{materialLabel} ({width:0.##} × {height:0.##} m)"
-                : $"Área {width:0.##} × {height:0.##} m @ {pricePerUnit:C2}/m²";
-
             int? matOptionId = chkAreaUseMaterial.Checked && cmbAreaOption.SelectedItem is MaterialOption opt
                 ? opt.Id : null;
+            string materialLabel = GetAreaMaterialLabel();
 
-            var calcData = new CalculationDetailHelper.AreaCalcData
+            if (rbAreaDirect.Checked)
             {
-                Width = width,
-                Height = height,
-                PricePerUnit = pricePerUnit,
-                Unit = "m²",
-                MaterialOptionId = matOptionId,
-                MaterialLabel = materialLabel
-            };
+                // Direct-dimension mode (original behavior)
+                decimal width = nudWidth.Value;
+                decimal height = nudHeight.Value;
+                decimal unitPrice = width * height * pricePerUnit;
+                decimal subtotal = _calcService.CalculateSubtotal(quantity, unitPrice);
 
-            _items.Add(new QuoteItem
+                string description = !string.IsNullOrEmpty(materialLabel)
+                    ? $"{materialLabel} ({width:0.##} \u00d7 {height:0.##} m)"
+                    : $"\u00c1rea {width:0.##} \u00d7 {height:0.##} m @ {pricePerUnit:C2}/m\u00b2";
+
+                var calcData = new CalculationDetailHelper.AreaCalcData
+                {
+                    Width = width,
+                    Height = height,
+                    PricePerUnit = pricePerUnit,
+                    Unit = "m\u00b2",
+                    MaterialOptionId = matOptionId,
+                    MaterialLabel = materialLabel
+                };
+
+                _items.Add(new QuoteItem
+                {
+                    MaterialOptionId = matOptionId,
+                    Quantity = quantity,
+                    UnitPrice = unitPrice,
+                    Subtotal = subtotal,
+                    Description = description,
+                    PricingType = "Area",
+                    CalculationData = CalculationDetailHelper.ToJson(calcData)
+                });
+            }
+            else
             {
-                MaterialOptionId = matOptionId,
-                Quantity = quantity,
-                UnitPrice = unitPrice,
-                Subtotal = subtotal,
-                Description = description,
-                PricingType = "Area",
-                CalculationData = CalculationDetailHelper.ToJson(calcData)
-            });
+                // Pieces mode
+                decimal pieceHeight = nudAreaPieceHeight.Value;
+                decimal widthFactor = nudAreaWidthFactor.Value;
+                int pieceCount = (int)nudAreaPieceCount.Value;
+                decimal pieceWidth = pieceHeight * widthFactor;
+
+                decimal unitPrice = _calcService.CalculateAreaPiecesSubtotal(pieceHeight, widthFactor, pieceCount, pricePerUnit);
+                decimal subtotal = _calcService.CalculateSubtotal(quantity, unitPrice);
+
+                var preset = cmbAreaPreset.SelectedItem as AreaPricingPreset;
+                string text = txtAreaText.Text.Trim();
+
+                string description;
+                if (!string.IsNullOrEmpty(text))
+                    description = preset != null
+                        ? $"{preset.Name} \u2014 {text} ({pieceCount} piezas, {pieceHeight:0.##}m)"
+                        : $"{text} ({pieceCount} piezas, {pieceHeight:0.##}m)";
+                else
+                    description = preset != null
+                        ? $"{preset.Name} ({pieceCount} piezas, {pieceHeight:0.##}m)"
+                        : $"{pieceCount} piezas ({pieceHeight:0.##}m)";
+
+                var calcData = new CalculationDetailHelper.AreaCalcData
+                {
+                    Width = pieceWidth,
+                    Height = pieceHeight,
+                    PricePerUnit = pricePerUnit,
+                    Unit = "m\u00b2",
+                    MaterialOptionId = matOptionId,
+                    MaterialLabel = materialLabel,
+                    Text = string.IsNullOrEmpty(text) ? null : text,
+                    PieceCount = pieceCount,
+                    WidthFactor = widthFactor,
+                    PresetId = preset?.Id,
+                    PresetName = preset?.Name
+                };
+
+                _items.Add(new QuoteItem
+                {
+                    MaterialOptionId = matOptionId,
+                    Quantity = quantity,
+                    UnitPrice = unitPrice,
+                    Subtotal = subtotal,
+                    Description = description,
+                    PricingType = "Area",
+                    CalculationData = CalculationDetailHelper.ToJson(calcData)
+                });
+            }
 
             FinalizeAddItem();
         }

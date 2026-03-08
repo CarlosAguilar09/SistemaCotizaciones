@@ -8,6 +8,7 @@ namespace SistemaCotizaciones.Views
         private Button btnProducts = null!;
         private Button btnMaterials = null!;
         private Button btnQuotes = null!;
+        private Button btnPresets = null!;
 
         public DashboardView(Navigator navigator)
         {
@@ -53,9 +54,21 @@ namespace SistemaCotizaciones.Views
                 _navigator.NavigateTo(new QuoteListView(_navigator), "Cotizaciones");
             AppTheme.StyleCardButton(btnQuotes, "📋");
 
+            btnPresets = new Button
+            {
+                Text = "Estándares de Precio",
+                Size = new Size(280, 80),
+                Location = new Point(200, 380)
+            };
+            btnPresets.Anchor = AnchorStyles.None;
+            btnPresets.Click += (s, e) =>
+                _navigator.NavigateTo(new AreaPresetListView(_navigator), "Estándares de Precio");
+            AppTheme.StyleCardButton(btnPresets, "📐");
+
             Controls.Add(btnProducts);
             Controls.Add(btnMaterials);
             Controls.Add(btnQuotes);
+            Controls.Add(btnPresets);
         }
 
         protected override void OnResize(EventArgs e)
@@ -66,16 +79,17 @@ namespace SistemaCotizaciones.Views
 
         private void CenterButtons()
         {
-            if (btnProducts == null || btnMaterials == null || btnQuotes == null) return;
+            if (btnProducts == null || btnMaterials == null || btnQuotes == null || btnPresets == null) return;
 
             int spacing = AppTheme.SpaceXL;
-            int totalHeight = btnProducts.Height + spacing + btnMaterials.Height + spacing + btnQuotes.Height;
+            int totalHeight = btnProducts.Height + spacing + btnMaterials.Height + spacing + btnQuotes.Height + spacing + btnPresets.Height;
             int startY = (ClientSize.Height - totalHeight) / 2;
             int centerX = (ClientSize.Width - btnProducts.Width) / 2;
 
             btnProducts.Location = new Point(centerX, startY);
             btnMaterials.Location = new Point(centerX, startY + btnProducts.Height + spacing);
             btnQuotes.Location = new Point(centerX, startY + btnProducts.Height + spacing + btnMaterials.Height + spacing);
+            btnPresets.Location = new Point(centerX, startY + btnProducts.Height + spacing + btnMaterials.Height + spacing + btnQuotes.Height + spacing);
         }
     }
 }

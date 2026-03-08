@@ -49,6 +49,9 @@ namespace SistemaCotizaciones
 
             if (!db.Materials.Any())
                 SeedMaterials(db);
+
+            if (!db.AreaPricingPresets.Any())
+                SeedAreaPricingPresets(db);
         }
 
         private static void SeedProducts(AppDbContext db)
@@ -298,6 +301,22 @@ namespace SistemaCotizaciones
             };
 
             db.Materials.AddRange(materials);
+            db.SaveChanges();
+        }
+
+        private static void SeedAreaPricingPresets(AppDbContext db)
+        {
+            var presets = new List<AreaPricingPreset>
+            {
+                new AreaPricingPreset
+                {
+                    Name = "Letras fabricadas",
+                    WidthFactor = 0.6m,
+                    PricePerSquareMeter = 1200m
+                }
+            };
+
+            db.AreaPricingPresets.AddRange(presets);
             db.SaveChanges();
         }
     }

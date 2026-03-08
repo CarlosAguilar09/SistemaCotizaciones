@@ -31,5 +31,13 @@ namespace SistemaCotizaciones.Services
         {
             return lines.Sum(l => l.Amount);
         }
+
+        public decimal CalculateAreaPiecesSubtotal(decimal pieceHeight, decimal widthFactor, int pieceCount, decimal pricePerUnit)
+        {
+            decimal pieceWidth = pieceHeight * widthFactor;
+            decimal areaPerPiece = pieceHeight * pieceWidth;
+            decimal totalArea = areaPerPiece * pieceCount;
+            return totalArea * pricePerUnit;
+        }
     }
 }

@@ -11,6 +11,7 @@ namespace SistemaCotizaciones.Data
         public DbSet<Material> Materials { get; set; }
         public DbSet<MaterialVariant> MaterialVariants { get; set; }
         public DbSet<MaterialOption> MaterialOptions { get; set; }
+        public DbSet<AreaPricingPreset> AreaPricingPresets { get; set; }
 
         private static readonly string DbPath = GetDatabasePath();
 

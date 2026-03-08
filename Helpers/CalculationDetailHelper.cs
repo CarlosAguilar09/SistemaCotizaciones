@@ -23,6 +23,13 @@ namespace SistemaCotizaciones.Helpers
             public string Unit { get; set; } = "m²";
             public int? MaterialOptionId { get; set; }
             public string? MaterialLabel { get; set; }
+
+            // Piece-based calculation fields (optional — null means direct-dimension mode)
+            public string? Text { get; set; }
+            public int? PieceCount { get; set; }
+            public decimal? WidthFactor { get; set; }
+            public int? PresetId { get; set; }
+            public string? PresetName { get; set; }
         }
 
         public static string ToJson(AreaCalcData data) =>
@@ -68,6 +75,34 @@ namespace SistemaCotizaciones.Helpers
                 case "Area":
                     var area = ParseAreaData(calculationData);
                     if (area == null) return "Sin detalles de cálculo.";
+
+                    // Piece-based mode
+                    if (area.PieceCount.HasValue && area.PieceCount.Value > 0)
+                    {
+                        decimal pieceWidth = area.Width;
+                        decimal pieceHeight = area.Height;
+                        decimal areaPerPiece = pieceWidth * pieceHeight;
+                        decimal totalArea = areaPerPiece * area.PieceCount.Value;
+                        var pieceLines = new List<string>();
+                        if (!string.IsNullOrEmpty(area.PresetName))
+                            pieceLines.Add($"Estándar: {area.PresetName}");
+                        if (!string.IsNullOrEmpty(area.Text))
+                            pieceLines.Add($"Texto: {area.Text}");
+                        pieceLines.Add($"Número de piezas: {area.PieceCount.Value}");
+                        pieceLines.Add($"Altura por pieza: {pieceHeight:0.##} m");
+                        if (area.WidthFactor.HasValue)
+                            pieceLines.Add($"Factor de ancho: {area.WidthFactor.Value:0.##}");
+                        pieceLines.Add($"Ancho estimado: {pieceWidth:0.##} m");
+                        pieceLines.Add($"Área por pieza: {areaPerPiece:0.####} {area.Unit}");
+                        pieceLines.Add($"Área total: {totalArea:0.####} {area.Unit}");
+                        pieceLines.Add($"Precio por {area.Unit}: {area.PricePerUnit:C2}");
+                        pieceLines.Add($"Costo total calculado: {(totalArea * area.PricePerUnit):C2}");
+                        if (!string.IsNullOrEmpty(area.MaterialLabel))
+                            pieceLines.Insert(0, $"Material: {area.MaterialLabel}");
+                        return string.Join("\n", pieceLines);
+                    }
+
+                    // Direct-dimension mode (original)
                     decimal computedArea = area.Width * area.Height;
                     var lines = new List<string>
                     {
