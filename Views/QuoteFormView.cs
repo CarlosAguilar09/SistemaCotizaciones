@@ -69,6 +69,7 @@ namespace SistemaCotizaciones.Views
         private DataGridView dgvCostLines = null!;
         private Label lblCustomTotal = null!;
 
+        private GroupBox _grpAddItem = null!;
         private NumericUpDown nudQuantity = null!;
         private DataGridView dgvItems = null!;
         private Label lblTotal = null!;
@@ -161,14 +162,13 @@ namespace SistemaCotizaciones.Views
             topTable.SetColumnSpan(txtNotes, 3);
 
             // -- Add item section --
-            var grpAddItem = new GroupBox
+            _grpAddItem = new GroupBox
             {
                 Text = "Agregar Item",
                 Dock = DockStyle.Top,
-                Height = 210,
                 Padding = new Padding(AppTheme.SpaceSM)
             };
-            AppTheme.StyleGroupBox(grpAddItem);
+            AppTheme.StyleGroupBox(_grpAddItem);
 
             // Radio buttons in a flow layout
             var radioFlow = new FlowLayoutPanel
@@ -370,10 +370,10 @@ namespace SistemaCotizaciones.Views
             addRow.Controls.Add(addRowFlow);
 
             // Assemble GroupBox (Fill first, then Bottom, then Top for correct dock order)
-            grpAddItem.Controls.Add(modeContainer);
-            grpAddItem.Controls.Add(addRow);
-            grpAddItem.Controls.Add(radioFlow);
-            AppTheme.StyleGroupBoxChildren(grpAddItem);
+            _grpAddItem.Controls.Add(modeContainer);
+            _grpAddItem.Controls.Add(addRow);
+            _grpAddItem.Controls.Add(radioFlow);
+            AppTheme.StyleGroupBoxChildren(_grpAddItem);
 
             // -- Bottom bar --
             var (bottomBar, leftFlow, rightFlow) = AppTheme.CreateButtonBar();
@@ -418,8 +418,10 @@ namespace SistemaCotizaciones.Views
             // Docking order: Fill first, Bottom, Top (last added = docked first)
             Controls.Add(dgvItems);
             Controls.Add(bottomBar);
-            Controls.Add(grpAddItem);
+            Controls.Add(_grpAddItem);
             Controls.Add(topTable);
+
+            UpdateItemSectionHeight();
         }
 
         private void BuildAreaPanel()
@@ -784,12 +786,14 @@ namespace SistemaCotizaciones.Views
             pnlMaterialMode.Visible = rbMaterial.Checked;
             pnlAreaMode.Visible = rbArea.Checked;
             pnlCustomMode.Visible = rbCustom.Checked;
+            UpdateItemSectionHeight();
         }
 
         private void ToggleAreaMaterialMode()
         {
             pnlAreaMaterial.Visible = chkAreaUseMaterial.Checked;
             pnlAreaManual.Visible = !chkAreaUseMaterial.Checked;
+            UpdateItemSectionHeight();
             RecalculateAreaPreview();
         }
 
@@ -806,7 +810,49 @@ namespace SistemaCotizaciones.Views
                 chkAreaUseMaterial.Checked = false;
             }
 
+            UpdateItemSectionHeight();
             RecalculateAreaPreview();
+        }
+
+        /// <summary>
+        /// Dynamically adjusts the "Agregar Item" GroupBox height based on the
+        /// active pricing mode and sub-mode so controls never overflow.
+        /// </summary>
+        private void UpdateItemSectionHeight()
+        {
+            // Base overhead: GroupBox chrome (~20px) + radioFlow (30) + addRow (44) + extra padding (6)
+            const int baseHeight = 100;
+
+            int contentHeight;
+
+            if (rbArea.Checked)
+            {
+                // Method toggle row
+                contentHeight = 28;
+
+                if (rbAreaDirect.Checked)
+                    contentHeight += 30;   // pnlAreaDirect
+                else
+                    contentHeight += 90 + 25;  // pnlAreaPiecesPanel + lblAreaPiecesPreview
+
+                contentHeight += 24;  // chkFlow (material checkbox)
+                contentHeight += 30;  // pnlAreaMaterial or pnlAreaManual
+                contentHeight += 25;  // lblAreaSubtotal
+            }
+            else if (rbCustom.Checked)
+            {
+                contentHeight = 160;  // description row + cost lines grid
+            }
+            else if (rbMaterial.Checked)
+            {
+                contentHeight = 60;  // two rows
+            }
+            else
+            {
+                contentHeight = 30;  // product: one row
+            }
+
+            _grpAddItem.Height = baseHeight + contentHeight;
         }
 
         private void LoadData()
