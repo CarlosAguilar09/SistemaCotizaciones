@@ -6,5 +6,7 @@ namespace SistemaCotizaciones.Models
         public string Name { get; set; } = string.Empty;
         public decimal WidthFactor { get; set; }
         public decimal PricePerSquareMeter { get; set; }
+
+        public List<ThicknessTier> ThicknessTiers { get; set; } = new();
     }
 }

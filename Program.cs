@@ -312,7 +312,13 @@ namespace SistemaCotizaciones
                 {
                     Name = "Letras fabricadas",
                     WidthFactor = 0.6m,
-                    PricePerSquareMeter = 1200m
+                    PricePerSquareMeter = 1200m,
+                    ThicknessTiers = new List<ThicknessTier>
+                    {
+                        new ThicknessTier { ThicknessMm = 10m, PricePerSquareMeter = 900m, Label = "PVC 10mm" },
+                        new ThicknessTier { ThicknessMm = 20m, PricePerSquareMeter = 1200m, Label = "PVC 20mm" },
+                        new ThicknessTier { ThicknessMm = 30m, PricePerSquareMeter = 1500m, Label = "PVC 30mm" },
+                    }
                 }
             };
 

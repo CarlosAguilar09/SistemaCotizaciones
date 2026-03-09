@@ -30,6 +30,11 @@ namespace SistemaCotizaciones.Helpers
             public decimal? WidthFactor { get; set; }
             public int? PresetId { get; set; }
             public string? PresetName { get; set; }
+
+            // Thickness tier fields (optional)
+            public decimal? ThicknessMm { get; set; }
+            public int? ThicknessTierId { get; set; }
+            public string? ThicknessLabel { get; set; }
         }
 
         public static string ToJson(AreaCalcData data) =>
@@ -86,6 +91,9 @@ namespace SistemaCotizaciones.Helpers
                         var pieceLines = new List<string>();
                         if (!string.IsNullOrEmpty(area.PresetName))
                             pieceLines.Add($"Estándar: {area.PresetName}");
+                        if (area.ThicknessMm.HasValue)
+                            pieceLines.Add($"Espesor: {area.ThicknessMm.Value:0.##} mm" +
+                                (string.IsNullOrEmpty(area.ThicknessLabel) ? "" : $" ({area.ThicknessLabel})"));
                         if (!string.IsNullOrEmpty(area.Text))
                             pieceLines.Add($"Texto: {area.Text}");
                         pieceLines.Add($"Número de piezas: {area.PieceCount.Value}");
@@ -104,14 +112,15 @@ namespace SistemaCotizaciones.Helpers
 
                     // Direct-dimension mode (original)
                     decimal computedArea = area.Width * area.Height;
-                    var lines = new List<string>
-                    {
-                        $"Ancho: {area.Width:0.##} m",
-                        $"Alto: {area.Height:0.##} m",
-                        $"Área: {computedArea:0.##} {area.Unit}",
-                        $"Precio por {area.Unit}: {area.PricePerUnit:C2}",
-                        $"Subtotal calculado: {(computedArea * area.PricePerUnit):C2}"
-                    };
+                    var lines = new List<string>();
+                    if (area.ThicknessMm.HasValue)
+                        lines.Add($"Espesor: {area.ThicknessMm.Value:0.##} mm" +
+                            (string.IsNullOrEmpty(area.ThicknessLabel) ? "" : $" ({area.ThicknessLabel})"));
+                    lines.Add($"Ancho: {area.Width:0.##} m");
+                    lines.Add($"Alto: {area.Height:0.##} m");
+                    lines.Add($"Área: {computedArea:0.##} {area.Unit}");
+                    lines.Add($"Precio por {area.Unit}: {area.PricePerUnit:C2}");
+                    lines.Add($"Subtotal calculado: {(computedArea * area.PricePerUnit):C2}");
                     if (!string.IsNullOrEmpty(area.MaterialLabel))
                         lines.Insert(0, $"Material: {area.MaterialLabel}");
                     return string.Join("\n", lines);

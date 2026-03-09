@@ -12,6 +12,7 @@ namespace SistemaCotizaciones.Data
         public DbSet<MaterialVariant> MaterialVariants { get; set; }
         public DbSet<MaterialOption> MaterialOptions { get; set; }
         public DbSet<AreaPricingPreset> AreaPricingPresets { get; set; }
+        public DbSet<ThicknessTier> ThicknessTiers { get; set; }
 
         private static readonly string DbPath = GetDatabasePath();
 
@@ -57,6 +58,13 @@ namespace SistemaCotizaciones.Data
                 .WithMany()
                 .HasForeignKey(qi => qi.MaterialOptionId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            // AreaPricingPreset → ThicknessTiers cascade delete
+            modelBuilder.Entity<ThicknessTier>()
+                .HasOne(t => t.Preset)
+                .WithMany(p => p.ThicknessTiers)
+                .HasForeignKey(t => t.PresetId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Default PricingType for backward compatibility
             modelBuilder.Entity<QuoteItem>()

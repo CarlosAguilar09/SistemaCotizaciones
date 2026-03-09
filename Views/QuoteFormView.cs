@@ -63,6 +63,10 @@ namespace SistemaCotizaciones.Views
         private NumericUpDown nudAreaWidthFactor = null!;
         private Label lblAreaPiecesPreview = null!;
 
+        // Thickness tier controls (shared across area modes)
+        private Panel pnlAreaPresetRow = null!;
+        private ComboBox cmbAreaThickness = null!;
+
         // Custom mode controls
         private Panel pnlCustomMode = null!;
         private TextBox txtCustomDescription = null!;
@@ -511,8 +515,8 @@ namespace SistemaCotizaciones.Views
             dimFlow.Controls.AddRange(new Control[] { lblW, nudWidth, lblH, nudHeight, lblAreaComputed });
             pnlAreaDirect.Controls.Add(dimFlow);
 
-            // --- Pieces sub-panel (new) ---
-            pnlAreaPiecesPanel = new Panel { Dock = DockStyle.Top, Height = AppTheme.FormRowHeight * 3, Visible = false };
+            // --- Pieces sub-panel (text + dimensions only — preset is in shared row) ---
+            pnlAreaPiecesPanel = new Panel { Dock = DockStyle.Top, Height = AppTheme.FormRowHeight * 2, Visible = false };
 
             // Row 1: Preset
             var presetFlow = new FlowLayoutPanel
@@ -527,6 +531,15 @@ namespace SistemaCotizaciones.Views
             cmbAreaPreset = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Size = new Size(200, AppTheme.InputHeight) };
             AppTheme.StyleComboBox(cmbAreaPreset);
             cmbAreaPreset.SelectedIndexChanged += CmbAreaPreset_SelectedIndexChanged;
+            var lblThickness = new Label { Text = "Espesor:", AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary, Margin = new Padding(AppTheme.SpaceMD, 4, AppTheme.SpaceSM, 0) };
+            cmbAreaThickness = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Size = new Size(180, AppTheme.InputHeight), Visible = false };
+            AppTheme.StyleComboBox(cmbAreaThickness);
+            cmbAreaThickness.SelectedIndexChanged += CmbAreaThickness_SelectedIndexChanged;
+            presetFlow.Controls.AddRange(new Control[] { lblPreset, cmbAreaPreset, lblThickness, cmbAreaThickness });
+
+            // Shared preset + thickness row (visible in both area modes)
+            pnlAreaPresetRow = new Panel { Dock = DockStyle.Top, Height = AppTheme.FormRowHeight };
+            pnlAreaPresetRow.Controls.Add(presetFlow);
             presetFlow.Controls.AddRange(new Control[] { lblPreset, cmbAreaPreset });
 
             // Row 2: Text + Piece count
@@ -595,7 +608,6 @@ namespace SistemaCotizaciones.Views
             // Assemble pieces panel (last added = docked first at top)
             pnlAreaPiecesPanel.Controls.Add(paramsFlow);
             pnlAreaPiecesPanel.Controls.Add(textFlow);
-            pnlAreaPiecesPanel.Controls.Add(presetFlow);
 
             // --- Price source: material checkbox (shared) ---
             var chkFlow = new FlowLayoutPanel
@@ -695,6 +707,7 @@ namespace SistemaCotizaciones.Views
             pnlAreaMode.Controls.Add(pnlAreaMaterial);
             pnlAreaMode.Controls.Add(chkFlow);
             pnlAreaMode.Controls.Add(pnlAreaPiecesPanel);
+            pnlAreaMode.Controls.Add(pnlAreaPresetRow);
             pnlAreaMode.Controls.Add(pnlAreaDirect);
             pnlAreaMode.Controls.Add(methodFlow);
         }
@@ -836,13 +849,13 @@ namespace SistemaCotizaciones.Views
 
             if (rbArea.Checked)
             {
-                // Method toggle row (36)
-                contentHeight = AppTheme.FormRowHeight;
+                // Method toggle row (36) + shared preset/thickness row (36)
+                contentHeight = AppTheme.FormRowHeight * 2;
 
                 if (rbAreaDirect.Checked)
                     contentHeight += AppTheme.FormRowHeight;  // pnlAreaDirect (36)
                 else
-                    contentHeight += AppTheme.FormRowHeight * 3 + 30;  // pnlAreaPiecesPanel (108) + lblAreaPiecesPreview (~30 with padding)
+                    contentHeight += AppTheme.FormRowHeight * 2 + 30;  // pnlAreaPiecesPanel (72) + lblAreaPiecesPreview (~30 with padding)
 
                 contentHeight += 32;  // chkFlow (checkbox)
                 contentHeight += AppTheme.FormRowHeight;  // pnlAreaMaterial or pnlAreaManual (36)
@@ -989,9 +1002,45 @@ namespace SistemaCotizaciones.Views
         {
             if (cmbAreaPreset.SelectedItem is AreaPricingPreset preset)
             {
-                nudAreaWidthFactor.Value = preset.WidthFactor;
-                nudAreaPricePerUnit.Value = preset.PricePerSquareMeter;
+                if (rbAreaPieces.Checked)
+                    nudAreaWidthFactor.Value = preset.WidthFactor;
+
+                // Populate thickness tiers if available
+                if (preset.ThicknessTiers.Count > 0)
+                {
+                    cmbAreaThickness.DisplayMember = "DisplayText";
+                    cmbAreaThickness.DataSource = preset.ThicknessTiers
+                        .OrderBy(t => t.ThicknessMm)
+                        .Select(t => new
+                        {
+                            t.Id,
+                            t.ThicknessMm,
+                            t.PricePerSquareMeter,
+                            t.Label,
+                            DisplayText = $"{t.ThicknessMm:0.##} mm — {t.PricePerSquareMeter:C2}" +
+                                (string.IsNullOrEmpty(t.Label) ? "" : $" ({t.Label})")
+                        })
+                        .ToList();
+                    cmbAreaThickness.Visible = true;
+                }
+                else
+                {
+                    cmbAreaThickness.DataSource = null;
+                    cmbAreaThickness.Visible = false;
+                    nudAreaPricePerUnit.Value = preset.PricePerSquareMeter;
+                }
+
                 chkAreaUseMaterial.Checked = false;
+            }
+            RecalculateAreaPreview();
+        }
+
+        private void CmbAreaThickness_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            if (cmbAreaThickness.SelectedItem != null)
+            {
+                dynamic tier = cmbAreaThickness.SelectedItem;
+                nudAreaPricePerUnit.Value = (decimal)tier.PricePerSquareMeter;
             }
             RecalculateAreaPreview();
         }
@@ -1173,9 +1222,21 @@ namespace SistemaCotizaciones.Views
                 ? opt.Id : null;
             string materialLabel = GetAreaMaterialLabel();
 
+            // Gather thickness info from selected tier
+            decimal? thicknessMm = null;
+            int? thicknessTierId = null;
+            string? thicknessLabel = null;
+            if (cmbAreaThickness.Visible && cmbAreaThickness.SelectedItem != null)
+            {
+                dynamic tier = cmbAreaThickness.SelectedItem;
+                thicknessMm = (decimal)tier.ThicknessMm;
+                thicknessTierId = (int)tier.Id;
+                thicknessLabel = tier.Label as string;
+            }
+
             if (rbAreaDirect.Checked)
             {
-                // Direct-dimension mode (original behavior)
+                // Direct-dimension mode
                 decimal width = nudWidth.Value;
                 decimal height = nudHeight.Value;
                 decimal unitPrice = width * height * pricePerUnit;
@@ -1185,6 +1246,9 @@ namespace SistemaCotizaciones.Views
                     ? $"{materialLabel} ({width:0.##} \u00d7 {height:0.##} m)"
                     : $"\u00c1rea {width:0.##} \u00d7 {height:0.##} m @ {pricePerUnit:C2}/m\u00b2";
 
+                if (thicknessMm.HasValue)
+                    description += $", grosor de {thicknessMm.Value:0.##} mm";
+
                 var calcData = new CalculationDetailHelper.AreaCalcData
                 {
                     Width = width,
@@ -1192,7 +1256,10 @@ namespace SistemaCotizaciones.Views
                     PricePerUnit = pricePerUnit,
                     Unit = "m\u00b2",
                     MaterialOptionId = matOptionId,
-                    MaterialLabel = materialLabel
+                    MaterialLabel = materialLabel,
+                    ThicknessMm = thicknessMm,
+                    ThicknessTierId = thicknessTierId,
+                    ThicknessLabel = thicknessLabel
                 };
 
                 _items.Add(new QuoteItem
@@ -1230,6 +1297,9 @@ namespace SistemaCotizaciones.Views
                         ? $"{preset.Name} ({pieceCount} piezas, {pieceHeight:0.##}m)"
                         : $"{pieceCount} piezas ({pieceHeight:0.##}m)";
 
+                if (thicknessMm.HasValue)
+                    description += $", grosor de {thicknessMm.Value:0.##} mm";
+
                 var calcData = new CalculationDetailHelper.AreaCalcData
                 {
                     Width = pieceWidth,
@@ -1242,7 +1312,10 @@ namespace SistemaCotizaciones.Views
                     PieceCount = pieceCount,
                     WidthFactor = widthFactor,
                     PresetId = preset?.Id,
-                    PresetName = preset?.Name
+                    PresetName = preset?.Name,
+                    ThicknessMm = thicknessMm,
+                    ThicknessTierId = thicknessTierId,
+                    ThicknessLabel = thicknessLabel
                 };
 
                 _items.Add(new QuoteItem
