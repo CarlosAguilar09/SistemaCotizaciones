@@ -116,32 +116,39 @@ namespace SistemaCotizaciones.Views
 
         private void LoadProducts()
         {
-            string filter = cmbFilter.SelectedItem?.ToString() ?? "Todos";
-            string? type = filter == "Todos" ? null : filter;
-            string search = txtSearch.Text.Trim();
-
-            List<Product> products;
-            if (!string.IsNullOrEmpty(search))
-                products = _productService.Search(search, type);
-            else if (type != null)
-                products = _productService.GetByType(type);
-            else
-                products = _productService.GetAll();
-
-            dgvProducts.DataSource = products;
-
-            if (dgvProducts.Columns["Id"] is DataGridViewColumn colId)
-                colId.Visible = false;
-            if (dgvProducts.Columns["Type"] is DataGridViewColumn colType)
-                colType.HeaderText = "Tipo";
-            if (dgvProducts.Columns["Name"] is DataGridViewColumn colName)
-                colName.HeaderText = "Nombre";
-            if (dgvProducts.Columns["Description"] is DataGridViewColumn colDesc)
-                colDesc.HeaderText = "Descripción";
-            if (dgvProducts.Columns["Price"] is DataGridViewColumn colPrice)
+            try
             {
-                colPrice.HeaderText = "Precio";
-                AppTheme.StyleCurrencyColumn(colPrice);
+                string filter = cmbFilter.SelectedItem?.ToString() ?? "Todos";
+                string? type = filter == "Todos" ? null : filter;
+                string search = txtSearch.Text.Trim();
+
+                List<Product> products;
+                if (!string.IsNullOrEmpty(search))
+                    products = _productService.Search(search, type);
+                else if (type != null)
+                    products = _productService.GetByType(type);
+                else
+                    products = _productService.GetAll();
+
+                dgvProducts.DataSource = products;
+
+                if (dgvProducts.Columns["Id"] is DataGridViewColumn colId)
+                    colId.Visible = false;
+                if (dgvProducts.Columns["Type"] is DataGridViewColumn colType)
+                    colType.HeaderText = "Tipo";
+                if (dgvProducts.Columns["Name"] is DataGridViewColumn colName)
+                    colName.HeaderText = "Nombre";
+                if (dgvProducts.Columns["Description"] is DataGridViewColumn colDesc)
+                    colDesc.HeaderText = "Descripción";
+                if (dgvProducts.Columns["Price"] is DataGridViewColumn colPrice)
+                {
+                    colPrice.HeaderText = "Precio";
+                    AppTheme.StyleCurrencyColumn(colPrice);
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorHelper.ShowError("Ocurrió un error al cargar los productos.", ex);
             }
         }
 
@@ -177,9 +184,16 @@ namespace SistemaCotizaciones.Views
 
             if (result == DialogResult.Yes)
             {
-                int productId = dgvProducts.CurrentRow.Cells["Id"].Value is int id ? id : 0;
-                _productService.Delete(productId);
-                LoadProducts();
+                try
+                {
+                    int productId = dgvProducts.CurrentRow.Cells["Id"].Value is int id ? id : 0;
+                    _productService.Delete(productId);
+                    LoadProducts();
+                }
+                catch (Exception ex)
+                {
+                    ErrorHelper.ShowError("Ocurrió un error al eliminar el producto.", ex);
+                }
             }
         }
     }

@@ -1,5 +1,6 @@
 using System.Text;
 using SistemaCotizaciones.Data;
+using SistemaCotizaciones.Helpers;
 using SistemaCotizaciones.Models;
 
 namespace SistemaCotizaciones
@@ -15,7 +16,34 @@ namespace SistemaCotizaciones
             // Required by PdfSharp on .NET 5+ for encoding 1252
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
-            InitializeDatabase();
+            // Global exception handlers — safety net so the app never crashes silently
+            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+            Application.ThreadException += (sender, e) =>
+            {
+                ErrorHelper.ShowError(
+                    "Ocurrió un error inesperado. La aplicación intentará continuar.",
+                    e.Exception);
+            };
+            AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
+            {
+                if (e.ExceptionObject is Exception ex)
+                    ErrorHelper.LogError(ex, "Error fatal no controlado");
+
+                MessageBox.Show(
+                    "Ocurrió un error fatal. La aplicación se cerrará.",
+                    "Error Fatal", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            };
+
+            try
+            {
+                InitializeDatabase();
+            }
+            catch (Exception ex)
+            {
+                ErrorHelper.ShowError(
+                    "No se pudo inicializar la base de datos. La aplicación se cerrará.", ex);
+                return;
+            }
 
             ApplicationConfiguration.Initialize();
             Application.Run(new MainForm());

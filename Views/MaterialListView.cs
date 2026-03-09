@@ -76,9 +76,16 @@ namespace SistemaCotizaciones.Views
 
                 if (result == DialogResult.Yes)
                 {
-                    int materialId = dgvMaterials.CurrentRow.Cells["Id"].Value is int id2 ? id2 : 0;
-                    _materialService.Delete(materialId);
-                    LoadMaterials();
+                    try
+                    {
+                        int materialId = dgvMaterials.CurrentRow.Cells["Id"].Value is int id2 ? id2 : 0;
+                        _materialService.Delete(materialId);
+                        LoadMaterials();
+                    }
+                    catch (Exception ex)
+                    {
+                        ErrorHelper.ShowError("Ocurrió un error al eliminar el material.", ex);
+                    }
                 }
             };
 
@@ -102,21 +109,28 @@ namespace SistemaCotizaciones.Views
 
         private void LoadMaterials()
         {
-            var materials = _materialService.GetAll();
-            var displayData = materials.Select(m => new
+            try
             {
-                m.Id,
-                Nombre = m.Name,
-                Unidad = m.Unit,
-                Descripción = m.Description ?? "",
-                Variantes = m.Variants.Count,
-                Opciones = m.Variants.Sum(v => v.Options.Count)
-            }).ToList();
+                var materials = _materialService.GetAll();
+                var displayData = materials.Select(m => new
+                {
+                    m.Id,
+                    Nombre = m.Name,
+                    Unidad = m.Unit,
+                    Descripción = m.Description ?? "",
+                    Variantes = m.Variants.Count,
+                    Opciones = m.Variants.Sum(v => v.Options.Count)
+                }).ToList();
 
-            dgvMaterials.DataSource = displayData;
+                dgvMaterials.DataSource = displayData;
 
-            if (dgvMaterials.Columns["Id"] is DataGridViewColumn colId)
-                colId.Visible = false;
+                if (dgvMaterials.Columns["Id"] is DataGridViewColumn colId)
+                    colId.Visible = false;
+            }
+            catch (Exception ex)
+            {
+                ErrorHelper.ShowError("Ocurrió un error al cargar los materiales.", ex);
+            }
         }
     }
 }

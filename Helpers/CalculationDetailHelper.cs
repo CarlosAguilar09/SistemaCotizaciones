@@ -44,7 +44,11 @@ namespace SistemaCotizaciones.Helpers
         {
             if (string.IsNullOrWhiteSpace(json)) return null;
             try { return JsonSerializer.Deserialize<AreaCalcData>(json, JsonOptions); }
-            catch { return null; }
+            catch (Exception ex)
+            {
+                ErrorHelper.LogError(ex, "Error al deserializar AreaCalcData");
+                return null;
+            }
         }
 
         // --- Custom fabrication calculation data ---
@@ -67,7 +71,11 @@ namespace SistemaCotizaciones.Helpers
         {
             if (string.IsNullOrWhiteSpace(json)) return null;
             try { return JsonSerializer.Deserialize<CustomCalcData>(json, JsonOptions); }
-            catch { return null; }
+            catch (Exception ex)
+            {
+                ErrorHelper.LogError(ex, "Error al deserializar CustomCalcData");
+                return null;
+            }
         }
 
         /// <summary>

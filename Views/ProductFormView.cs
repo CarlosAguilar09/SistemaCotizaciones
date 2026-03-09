@@ -87,13 +87,20 @@ namespace SistemaCotizaciones.Views
         {
             if (_productId.HasValue)
             {
-                var product = _productService.GetById(_productId.Value);
-                if (product != null)
+                try
                 {
-                    cmbType.SelectedItem = product.Type;
-                    txtName.Text = product.Name;
-                    txtDescription.Text = product.Description ?? string.Empty;
-                    nudPrice.Value = product.Price;
+                    var product = _productService.GetById(_productId.Value);
+                    if (product != null)
+                    {
+                        cmbType.SelectedItem = product.Type;
+                        txtName.Text = product.Name;
+                        txtDescription.Text = product.Description ?? string.Empty;
+                        nudPrice.Value = product.Price;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ErrorHelper.ShowError("Ocurrió un error al cargar el producto.", ex);
                 }
             }
         }
@@ -107,23 +114,30 @@ namespace SistemaCotizaciones.Views
                 return;
             }
 
-            var product = new Product
+            try
             {
-                Type = cmbType.SelectedItem?.ToString() ?? "Producto",
-                Name = txtName.Text.Trim(),
-                Description = string.IsNullOrWhiteSpace(txtDescription.Text) ? null : txtDescription.Text.Trim(),
-                Price = nudPrice.Value
-            };
+                var product = new Product
+                {
+                    Type = cmbType.SelectedItem?.ToString() ?? "Producto",
+                    Name = txtName.Text.Trim(),
+                    Description = string.IsNullOrWhiteSpace(txtDescription.Text) ? null : txtDescription.Text.Trim(),
+                    Price = nudPrice.Value
+                };
 
-            if (_productId == null)
-                _productService.Add(product);
-            else
-            {
-                product.Id = _productId.Value;
-                _productService.Update(product);
+                if (_productId == null)
+                    _productService.Add(product);
+                else
+                {
+                    product.Id = _productId.Value;
+                    _productService.Update(product);
+                }
+
+                _navigator.GoBack();
             }
-
-            _navigator.GoBack();
+            catch (Exception ex)
+            {
+                ErrorHelper.ShowError("Ocurrió un error al guardar el producto.", ex);
+            }
         }
     }
 }

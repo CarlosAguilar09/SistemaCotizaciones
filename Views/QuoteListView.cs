@@ -78,26 +78,33 @@ namespace SistemaCotizaciones.Views
 
         private void LoadQuotes()
         {
-            var quotes = _quoteService.GetAll();
-            dgvQuotes.DataSource = quotes;
+            try
+            {
+                var quotes = _quoteService.GetAll();
+                dgvQuotes.DataSource = quotes;
 
-            if (dgvQuotes.Columns["Id"] is DataGridViewColumn colId)
-                colId.Visible = false;
-            if (dgvQuotes.Columns["Items"] is DataGridViewColumn colItems)
-                colItems.Visible = false;
-            if (dgvQuotes.Columns["ClientName"] is DataGridViewColumn colClient)
-                colClient.HeaderText = "Cliente";
-            if (dgvQuotes.Columns["Date"] is DataGridViewColumn colDate)
-            {
-                colDate.HeaderText = "Fecha";
-                AppTheme.StyleDateColumn(colDate);
+                if (dgvQuotes.Columns["Id"] is DataGridViewColumn colId)
+                    colId.Visible = false;
+                if (dgvQuotes.Columns["Items"] is DataGridViewColumn colItems)
+                    colItems.Visible = false;
+                if (dgvQuotes.Columns["ClientName"] is DataGridViewColumn colClient)
+                    colClient.HeaderText = "Cliente";
+                if (dgvQuotes.Columns["Date"] is DataGridViewColumn colDate)
+                {
+                    colDate.HeaderText = "Fecha";
+                    AppTheme.StyleDateColumn(colDate);
+                }
+                if (dgvQuotes.Columns["Notes"] is DataGridViewColumn colNotes)
+                    colNotes.HeaderText = "Notas";
+                if (dgvQuotes.Columns["Total"] is DataGridViewColumn colTotal)
+                {
+                    colTotal.HeaderText = "Total";
+                    AppTheme.StyleCurrencyColumn(colTotal);
+                }
             }
-            if (dgvQuotes.Columns["Notes"] is DataGridViewColumn colNotes)
-                colNotes.HeaderText = "Notas";
-            if (dgvQuotes.Columns["Total"] is DataGridViewColumn colTotal)
+            catch (Exception ex)
             {
-                colTotal.HeaderText = "Total";
-                AppTheme.StyleCurrencyColumn(colTotal);
+                ErrorHelper.ShowError("Ocurrió un error al cargar las cotizaciones.", ex);
             }
         }
 
@@ -146,9 +153,16 @@ namespace SistemaCotizaciones.Views
 
             if (result == DialogResult.Yes)
             {
-                int quoteId = dgvQuotes.CurrentRow.Cells["Id"].Value is int id ? id : 0;
-                _quoteService.Delete(quoteId);
-                LoadQuotes();
+                try
+                {
+                    int quoteId = dgvQuotes.CurrentRow.Cells["Id"].Value is int id ? id : 0;
+                    _quoteService.Delete(quoteId);
+                    LoadQuotes();
+                }
+                catch (Exception ex)
+                {
+                    ErrorHelper.ShowError("Ocurrió un error al eliminar la cotización.", ex);
+                }
             }
         }
     }

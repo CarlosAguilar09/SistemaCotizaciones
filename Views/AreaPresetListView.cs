@@ -69,34 +69,41 @@ namespace SistemaCotizaciones.Views
 
         private void LoadPresets()
         {
-            var presets = _presetService.GetAll();
-            var displayData = presets.Select(p => new
+            try
             {
-                p.Id,
-                Nombre = p.Name,
-                FactorAncho = p.WidthFactor,
-                PrecioPorM2 = p.PricePerSquareMeter,
-                Espesores = p.ThicknessTiers.Count
-            }).ToList();
+                var presets = _presetService.GetAll();
+                var displayData = presets.Select(p => new
+                {
+                    p.Id,
+                    Nombre = p.Name,
+                    FactorAncho = p.WidthFactor,
+                    PrecioPorM2 = p.PricePerSquareMeter,
+                    Espesores = p.ThicknessTiers.Count
+                }).ToList();
 
-            dgvPresets.DataSource = displayData;
+                dgvPresets.DataSource = displayData;
 
-            if (dgvPresets.Columns["Id"] is DataGridViewColumn colId)
-                colId.Visible = false;
-            if (dgvPresets.Columns["Nombre"] is DataGridViewColumn colName)
-                colName.HeaderText = "Nombre";
-            if (dgvPresets.Columns["FactorAncho"] is DataGridViewColumn colFactor)
-            {
-                colFactor.HeaderText = "Factor de Ancho";
-                colFactor.DefaultCellStyle.Format = "0.##";
+                if (dgvPresets.Columns["Id"] is DataGridViewColumn colId)
+                    colId.Visible = false;
+                if (dgvPresets.Columns["Nombre"] is DataGridViewColumn colName)
+                    colName.HeaderText = "Nombre";
+                if (dgvPresets.Columns["FactorAncho"] is DataGridViewColumn colFactor)
+                {
+                    colFactor.HeaderText = "Factor de Ancho";
+                    colFactor.DefaultCellStyle.Format = "0.##";
+                }
+                if (dgvPresets.Columns["PrecioPorM2"] is DataGridViewColumn colPrice)
+                {
+                    colPrice.HeaderText = "Precio por m²";
+                    AppTheme.StyleCurrencyColumn(colPrice);
+                }
+                if (dgvPresets.Columns["Espesores"] is DataGridViewColumn colTiers)
+                    colTiers.HeaderText = "Espesores";
             }
-            if (dgvPresets.Columns["PrecioPorM2"] is DataGridViewColumn colPrice)
+            catch (Exception ex)
             {
-                colPrice.HeaderText = "Precio por m²";
-                AppTheme.StyleCurrencyColumn(colPrice);
+                ErrorHelper.ShowError("Ocurrió un error al cargar los estándares de precio.", ex);
             }
-            if (dgvPresets.Columns["Espesores"] is DataGridViewColumn colTiers)
-                colTiers.HeaderText = "Espesores";
         }
 
         private void BtnNew_Click(object? sender, EventArgs e)
@@ -131,9 +138,16 @@ namespace SistemaCotizaciones.Views
 
             if (result == DialogResult.Yes)
             {
-                int presetId = dgvPresets.CurrentRow.Cells["Id"].Value is int id ? id : 0;
-                _presetService.Delete(presetId);
-                LoadPresets();
+                try
+                {
+                    int presetId = dgvPresets.CurrentRow.Cells["Id"].Value is int id ? id : 0;
+                    _presetService.Delete(presetId);
+                    LoadPresets();
+                }
+                catch (Exception ex)
+                {
+                    ErrorHelper.ShowError("Ocurrió un error al eliminar el estándar.", ex);
+                }
             }
         }
     }

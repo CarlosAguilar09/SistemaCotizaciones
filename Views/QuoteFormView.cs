@@ -879,41 +879,48 @@ namespace SistemaCotizaciones.Views
 
         private void LoadData()
         {
-            // Load products
-            var products = _quoteService.GetAvailableProducts();
-            cmbProduct.DisplayMember = "Name";
-            cmbProduct.DataSource = products;
-
-            // Load materials for Material mode
-            _materials = _quoteService.GetAvailableMaterials();
-            cmbMaterial.DisplayMember = "Name";
-            cmbMaterial.DataSource = _materials;
-
-            // Load materials for Area mode
-            _areaMaterials = _quoteService.GetAvailableMaterials();
-            cmbAreaMaterial.DisplayMember = "Name";
-            cmbAreaMaterial.DataSource = _areaMaterials;
-
-            // Load presets for Area pieces mode
-            _areaPresets = _presetService.GetAll();
-            cmbAreaPreset.DisplayMember = "Name";
-            cmbAreaPreset.DataSource = _areaPresets;
-
-            if (_quoteId.HasValue)
+            try
             {
-                var quote = _quoteService.GetById(_quoteId.Value);
-                if (quote != null)
-                {
-                    txtClientName.Text = quote.ClientName;
-                    dtpDate.Value = quote.Date;
-                    txtNotes.Text = quote.Notes ?? string.Empty;
+                // Load products
+                var products = _quoteService.GetAvailableProducts();
+                cmbProduct.DisplayMember = "Name";
+                cmbProduct.DataSource = products;
 
-                    var items = _quoteService.GetItemsByQuoteId(_quoteId.Value);
-                    foreach (var item in items)
-                        _items.Add(item);
-                    BindItemsGrid();
-                    RecalculateTotal();
+                // Load materials for Material mode
+                _materials = _quoteService.GetAvailableMaterials();
+                cmbMaterial.DisplayMember = "Name";
+                cmbMaterial.DataSource = _materials;
+
+                // Load materials for Area mode
+                _areaMaterials = _quoteService.GetAvailableMaterials();
+                cmbAreaMaterial.DisplayMember = "Name";
+                cmbAreaMaterial.DataSource = _areaMaterials;
+
+                // Load presets for Area pieces mode
+                _areaPresets = _presetService.GetAll();
+                cmbAreaPreset.DisplayMember = "Name";
+                cmbAreaPreset.DataSource = _areaPresets;
+
+                if (_quoteId.HasValue)
+                {
+                    var quote = _quoteService.GetById(_quoteId.Value);
+                    if (quote != null)
+                    {
+                        txtClientName.Text = quote.ClientName;
+                        dtpDate.Value = quote.Date;
+                        txtNotes.Text = quote.Notes ?? string.Empty;
+
+                        var items = _quoteService.GetItemsByQuoteId(_quoteId.Value);
+                        foreach (var item in items)
+                            _items.Add(item);
+                        BindItemsGrid();
+                        RecalculateTotal();
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                ErrorHelper.ShowError("Ocurrió un error al cargar los datos de la cotización.", ex);
             }
         }
 
@@ -1427,7 +1434,16 @@ namespace SistemaCotizaciones.Views
                     Date = dtpDate.Value.Date,
                     Notes = string.IsNullOrWhiteSpace(txtNotes.Text) ? null : txtNotes.Text.Trim(),
                 };
-                _quoteService.SaveQuote(quote, _items);
+
+                try
+                {
+                    _quoteService.SaveQuote(quote, _items);
+                }
+                catch (Exception ex)
+                {
+                    ErrorHelper.ShowError("Ocurrió un error al guardar la cotización.", ex);
+                    return;
+                }
             }
             else
             {
@@ -1438,7 +1454,16 @@ namespace SistemaCotizaciones.Views
                     Date = dtpDate.Value.Date,
                     Notes = string.IsNullOrWhiteSpace(txtNotes.Text) ? null : txtNotes.Text.Trim(),
                 };
-                _quoteService.UpdateQuote(quote, _items);
+
+                try
+                {
+                    _quoteService.UpdateQuote(quote, _items);
+                }
+                catch (Exception ex)
+                {
+                    ErrorHelper.ShowError("Ocurrió un error al actualizar la cotización.", ex);
+                    return;
+                }
             }
 
             _navigator.GoBack();

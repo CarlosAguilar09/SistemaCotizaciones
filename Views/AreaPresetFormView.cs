@@ -211,13 +211,20 @@ namespace SistemaCotizaciones.Views
         {
             if (_presetId.HasValue)
             {
-                var preset = _presetService.GetById(_presetId.Value);
-                if (preset != null)
+                try
                 {
-                    txtName.Text = preset.Name;
-                    nudWidthFactor.Value = preset.WidthFactor;
-                    nudPricePerM2.Value = preset.PricePerSquareMeter;
-                    _tiers = preset.ThicknessTiers.OrderBy(t => t.ThicknessMm).ToList();
+                    var preset = _presetService.GetById(_presetId.Value);
+                    if (preset != null)
+                    {
+                        txtName.Text = preset.Name;
+                        nudWidthFactor.Value = preset.WidthFactor;
+                        nudPricePerM2.Value = preset.PricePerSquareMeter;
+                        _tiers = preset.ThicknessTiers.OrderBy(t => t.ThicknessMm).ToList();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ErrorHelper.ShowError("Ocurrió un error al cargar el estándar.", ex);
                 }
             }
             RefreshTiersGrid();
@@ -254,8 +261,15 @@ namespace SistemaCotizaciones.Views
             if (_presetId.HasValue)
                 preset.Id = _presetId.Value;
 
-            _presetService.Save(preset);
-            _navigator.GoBack();
+            try
+            {
+                _presetService.Save(preset);
+                _navigator.GoBack();
+            }
+            catch (Exception ex)
+            {
+                ErrorHelper.ShowError("Ocurrió un error al guardar el estándar.", ex);
+            }
         }
     }
 }

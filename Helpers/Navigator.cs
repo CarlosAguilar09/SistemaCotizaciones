@@ -55,7 +55,8 @@ namespace SistemaCotizaciones.Helpers
             if (_currentView != null)
             {
                 _contentPanel.Controls.Remove(_currentView);
-                _currentView.Dispose();
+                try { _currentView.Dispose(); }
+                catch (Exception ex) { ErrorHelper.LogError(ex, "Error al liberar vista actual"); }
                 _currentView = null;
             }
 
@@ -65,11 +66,15 @@ namespace SistemaCotizaciones.Helpers
             _currentView = previous;
 
             if (previous is IRefreshable refreshable)
-                refreshable.RefreshData();
+            {
+                try { refreshable.RefreshData(); }
+                catch (Exception ex) { ErrorHelper.LogError(ex, "Error al refrescar vista anterior"); }
+            }
 
             // Extract title from view's Tag or use empty string
             var title = previous.Tag?.ToString() ?? "";
-            Navigated?.Invoke(title);
+            try { Navigated?.Invoke(title); }
+            catch (Exception ex) { ErrorHelper.LogError(ex, "Error en evento Navigated"); }
         }
 
         public bool CanGoBack => _history.Count > 0;

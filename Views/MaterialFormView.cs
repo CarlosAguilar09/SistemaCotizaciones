@@ -116,13 +116,20 @@ namespace SistemaCotizaciones.Views
         {
             if (_materialId.HasValue)
             {
-                var material = _materialService.GetById(_materialId.Value);
-                if (material != null)
+                try
                 {
-                    _material = material;
-                    txtName.Text = material.Name;
-                    txtUnit.Text = material.Unit;
-                    txtDescription.Text = material.Description ?? "";
+                    var material = _materialService.GetById(_materialId.Value);
+                    if (material != null)
+                    {
+                        _material = material;
+                        txtName.Text = material.Name;
+                        txtUnit.Text = material.Unit;
+                        txtDescription.Text = material.Description ?? "";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ErrorHelper.ShowError("Ocurrió un error al cargar el material.", ex);
                 }
             }
 
@@ -305,12 +312,19 @@ namespace SistemaCotizaciones.Views
             _material.Unit = txtUnit.Text.Trim();
             _material.Description = string.IsNullOrWhiteSpace(txtDescription.Text) ? null : txtDescription.Text.Trim();
 
-            if (_materialId == null)
-                _materialService.Add(_material);
-            else
-                _materialService.Update(_material);
+            try
+            {
+                if (_materialId == null)
+                    _materialService.Add(_material);
+                else
+                    _materialService.Update(_material);
 
-            _navigator.GoBack();
+                _navigator.GoBack();
+            }
+            catch (Exception ex)
+            {
+                ErrorHelper.ShowError("Ocurrió un error al guardar el material.", ex);
+            }
         }
 
         private static string? PromptInput(string title, string label, string defaultValue = "")

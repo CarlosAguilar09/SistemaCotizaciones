@@ -92,23 +92,30 @@ namespace SistemaCotizaciones.Views
 
         private void LoadData()
         {
-            _quote = _quoteService.GetById(_quoteId);
-            if (_quote == null)
+            try
             {
-                MessageBox.Show("No se encontró la cotización.", "Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-                _navigator.GoBack();
-                return;
+                _quote = _quoteService.GetById(_quoteId);
+                if (_quote == null)
+                {
+                    MessageBox.Show("No se encontró la cotización.", "Error",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    _navigator.GoBack();
+                    return;
+                }
+
+                _items = _quoteService.GetItemsByQuoteId(_quoteId);
+
+                lblClientName.Text = _quote.ClientName;
+                lblDate.Text = _quote.Date.ToString("dd/MM/yyyy");
+                txtNotes.Text = _quote.Notes ?? string.Empty;
+                lblTotal.Text = $"Total: {_quote.Total:C2}";
+
+                BindItemsGrid();
             }
-
-            _items = _quoteService.GetItemsByQuoteId(_quoteId);
-
-            lblClientName.Text = _quote.ClientName;
-            lblDate.Text = _quote.Date.ToString("dd/MM/yyyy");
-            txtNotes.Text = _quote.Notes ?? string.Empty;
-            lblTotal.Text = $"Total: {_quote.Total:C2}";
-
-            BindItemsGrid();
+            catch (Exception ex)
+            {
+                ErrorHelper.ShowError("Ocurrió un error al cargar la cotización.", ex);
+            }
         }
 
         private void BindItemsGrid()
@@ -204,8 +211,7 @@ namespace SistemaCotizaciones.Views
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Error al exportar: {ex.Message}", "Error",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    ErrorHelper.ShowError("Error al exportar el PDF.", ex);
                 }
             }
         }
