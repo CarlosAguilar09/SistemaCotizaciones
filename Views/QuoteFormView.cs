@@ -174,7 +174,7 @@ namespace SistemaCotizaciones.Views
             var radioFlow = new FlowLayoutPanel
             {
                 Dock = DockStyle.Top,
-                Height = 30,
+                Height = AppTheme.FormRowHeight,
                 FlowDirection = FlowDirection.LeftToRight,
                 WrapContents = false,
                 BackColor = Color.Transparent,
@@ -224,7 +224,7 @@ namespace SistemaCotizaciones.Views
             var prodFlow = new FlowLayoutPanel
             {
                 Dock = DockStyle.Top,
-                Height = 30,
+                Height = AppTheme.FormRowHeight,
                 FlowDirection = FlowDirection.LeftToRight,
                 WrapContents = false,
                 BackColor = Color.Transparent
@@ -261,7 +261,7 @@ namespace SistemaCotizaciones.Views
             var matRow1 = new FlowLayoutPanel
             {
                 Dock = DockStyle.Top,
-                Height = 30,
+                Height = AppTheme.FormRowHeight,
                 FlowDirection = FlowDirection.LeftToRight,
                 WrapContents = false,
                 BackColor = Color.Transparent
@@ -297,7 +297,7 @@ namespace SistemaCotizaciones.Views
             var matRow2 = new FlowLayoutPanel
             {
                 Dock = DockStyle.Top,
-                Height = 30,
+                Height = AppTheme.FormRowHeight,
                 FlowDirection = FlowDirection.LeftToRight,
                 WrapContents = false,
                 BackColor = Color.Transparent
@@ -336,7 +336,8 @@ namespace SistemaCotizaciones.Views
             var addRow = new Panel
             {
                 Dock = DockStyle.Bottom,
-                Height = AppTheme.FormRowHeight + AppTheme.SpaceSM
+                Height = AppTheme.FormRowHeight + AppTheme.SpaceMD,
+                Padding = new Padding(0, AppTheme.SpaceSM, 0, 0)
             };
             var addRowFlow = new FlowLayoutPanel
             {
@@ -369,9 +370,16 @@ namespace SistemaCotizaciones.Views
             addRowFlow.Controls.AddRange(new Control[] { lblQuantity, nudQuantity, btnAddItem });
             addRow.Controls.Add(addRowFlow);
 
+            // Separators for visual grouping
+            var sepAfterRadio = AppTheme.CreateSeparator();
+            var sepBeforeAddRow = AppTheme.CreateSeparator();
+            sepBeforeAddRow.Dock = DockStyle.Bottom;
+
             // Assemble GroupBox (Fill first, then Bottom, then Top for correct dock order)
             _grpAddItem.Controls.Add(modeContainer);
+            _grpAddItem.Controls.Add(sepBeforeAddRow);
             _grpAddItem.Controls.Add(addRow);
+            _grpAddItem.Controls.Add(sepAfterRadio);
             _grpAddItem.Controls.Add(radioFlow);
             AppTheme.StyleGroupBoxChildren(_grpAddItem);
 
@@ -432,7 +440,7 @@ namespace SistemaCotizaciones.Views
             var methodFlow = new FlowLayoutPanel
             {
                 Dock = DockStyle.Top,
-                Height = 28,
+                Height = AppTheme.FormRowHeight,
                 FlowDirection = FlowDirection.LeftToRight,
                 WrapContents = false,
                 BackColor = Color.Transparent
@@ -458,7 +466,7 @@ namespace SistemaCotizaciones.Views
             methodFlow.Controls.AddRange(new Control[] { rbAreaDirect, rbAreaPieces });
 
             // --- Direct dimensions sub-panel (existing) ---
-            pnlAreaDirect = new Panel { Dock = DockStyle.Top, Height = 30 };
+            pnlAreaDirect = new Panel { Dock = DockStyle.Top, Height = AppTheme.FormRowHeight };
             var dimFlow = new FlowLayoutPanel
             {
                 Dock = DockStyle.Fill,
@@ -504,13 +512,13 @@ namespace SistemaCotizaciones.Views
             pnlAreaDirect.Controls.Add(dimFlow);
 
             // --- Pieces sub-panel (new) ---
-            pnlAreaPiecesPanel = new Panel { Dock = DockStyle.Top, Height = 90, Visible = false };
+            pnlAreaPiecesPanel = new Panel { Dock = DockStyle.Top, Height = AppTheme.FormRowHeight * 3, Visible = false };
 
             // Row 1: Preset
             var presetFlow = new FlowLayoutPanel
             {
                 Dock = DockStyle.Top,
-                Height = 30,
+                Height = AppTheme.FormRowHeight,
                 FlowDirection = FlowDirection.LeftToRight,
                 WrapContents = false,
                 BackColor = Color.Transparent
@@ -525,7 +533,7 @@ namespace SistemaCotizaciones.Views
             var textFlow = new FlowLayoutPanel
             {
                 Dock = DockStyle.Top,
-                Height = 30,
+                Height = AppTheme.FormRowHeight,
                 FlowDirection = FlowDirection.LeftToRight,
                 WrapContents = false,
                 BackColor = Color.Transparent
@@ -551,7 +559,7 @@ namespace SistemaCotizaciones.Views
             var paramsFlow = new FlowLayoutPanel
             {
                 Dock = DockStyle.Top,
-                Height = 30,
+                Height = AppTheme.FormRowHeight,
                 FlowDirection = FlowDirection.LeftToRight,
                 WrapContents = false,
                 BackColor = Color.Transparent
@@ -593,7 +601,7 @@ namespace SistemaCotizaciones.Views
             var chkFlow = new FlowLayoutPanel
             {
                 Dock = DockStyle.Top,
-                Height = 24,
+                Height = 32,
                 FlowDirection = FlowDirection.LeftToRight,
                 WrapContents = false,
                 BackColor = Color.Transparent
@@ -610,7 +618,7 @@ namespace SistemaCotizaciones.Views
             chkFlow.Controls.Add(chkAreaUseMaterial);
 
             // Material selection sub-panel (shared)
-            pnlAreaMaterial = new Panel { Dock = DockStyle.Top, Height = 30 };
+            pnlAreaMaterial = new Panel { Dock = DockStyle.Top, Height = AppTheme.FormRowHeight };
             var matFlow = new FlowLayoutPanel
             {
                 Dock = DockStyle.Fill,
@@ -634,7 +642,7 @@ namespace SistemaCotizaciones.Views
             pnlAreaMaterial.Controls.Add(matFlow);
 
             // Manual price sub-panel (shared)
-            pnlAreaManual = new Panel { Dock = DockStyle.Top, Height = 30, Visible = false };
+            pnlAreaManual = new Panel { Dock = DockStyle.Top, Height = AppTheme.FormRowHeight, Visible = false };
             var manFlow = new FlowLayoutPanel
             {
                 Dock = DockStyle.Fill,
@@ -666,7 +674,7 @@ namespace SistemaCotizaciones.Views
                 ForeColor = AppTheme.TextSecondary,
                 Dock = DockStyle.Top,
                 Visible = false,
-                Padding = new Padding(0, AppTheme.SpaceXS, 0, 0)
+                Padding = new Padding(0, AppTheme.SpaceSM, 0, 0)
             };
 
             // Subtotal preview (shared)
@@ -677,7 +685,7 @@ namespace SistemaCotizaciones.Views
                 Font = new Font("Segoe UI", 10F, FontStyle.Bold),
                 ForeColor = AppTheme.Accent,
                 Dock = DockStyle.Top,
-                Padding = new Padding(0, AppTheme.SpaceXS, 0, 0)
+                Padding = new Padding(0, AppTheme.SpaceSM, 0, AppTheme.SpaceXS)
             };
 
             // Assemble (last added = docked first at top)
@@ -696,7 +704,7 @@ namespace SistemaCotizaciones.Views
             pnlCustomMode = new Panel { Dock = DockStyle.Fill, Visible = false };
 
             // Description row
-            var descPanel = new Panel { Dock = DockStyle.Top, Height = 28 };
+            var descPanel = new Panel { Dock = DockStyle.Top, Height = AppTheme.FormRowHeight };
             var lblDesc = new Label
             {
                 Text = "Descripci\u00f3n (cliente):",
@@ -820,36 +828,37 @@ namespace SistemaCotizaciones.Views
         /// </summary>
         private void UpdateItemSectionHeight()
         {
-            // Base overhead: GroupBox chrome (~20px) + radioFlow (30) + addRow (44) + extra padding (6)
-            const int baseHeight = 100;
+            // GroupBox chrome (~20) + radioFlow (36) + separator (1) + separator (1)
+            // + addRow (36 + 12 = 48) + GroupBox padding (8+4+8+8 = 28) = ~134
+            const int baseHeight = 134;
 
             int contentHeight;
 
             if (rbArea.Checked)
             {
-                // Method toggle row
-                contentHeight = 28;
+                // Method toggle row (36)
+                contentHeight = AppTheme.FormRowHeight;
 
                 if (rbAreaDirect.Checked)
-                    contentHeight += 30;   // pnlAreaDirect
+                    contentHeight += AppTheme.FormRowHeight;  // pnlAreaDirect (36)
                 else
-                    contentHeight += 90 + 25;  // pnlAreaPiecesPanel + lblAreaPiecesPreview
+                    contentHeight += AppTheme.FormRowHeight * 3 + 30;  // pnlAreaPiecesPanel (108) + lblAreaPiecesPreview (~30 with padding)
 
-                contentHeight += 24;  // chkFlow (material checkbox)
-                contentHeight += 30;  // pnlAreaMaterial or pnlAreaManual
-                contentHeight += 25;  // lblAreaSubtotal
+                contentHeight += 32;  // chkFlow (checkbox)
+                contentHeight += AppTheme.FormRowHeight;  // pnlAreaMaterial or pnlAreaManual (36)
+                contentHeight += 30;  // lblAreaSubtotal (with padding)
             }
             else if (rbCustom.Checked)
             {
-                contentHeight = 160;  // description row + cost lines grid
+                contentHeight = AppTheme.FormRowHeight + 140;  // descPanel (36) + cost lines grid area
             }
             else if (rbMaterial.Checked)
             {
-                contentHeight = 60;  // two rows
+                contentHeight = AppTheme.FormRowHeight * 2;  // two rows (72)
             }
             else
             {
-                contentHeight = 30;  // product: one row
+                contentHeight = AppTheme.FormRowHeight;  // product: one row (36)
             }
 
             _grpAddItem.Height = baseHeight + contentHeight;
