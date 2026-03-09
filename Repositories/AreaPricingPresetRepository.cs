@@ -36,33 +36,49 @@ namespace SistemaCotizaciones.Repositories
         {
             using var db = new AppDbContext();
 
-            // Load existing tiers to diff against incoming ones
-            var existingTiers = db.ThicknessTiers
-                .Where(t => t.PresetId == preset.Id)
-                .ToList();
+            // Load the tracked preset with its existing tiers
+            var tracked = db.AreaPricingPresets
+                .Include(p => p.ThicknessTiers)
+                .First(p => p.Id == preset.Id);
+
+            // Update scalar preset properties
+            tracked.Name = preset.Name;
+            tracked.WidthFactor = preset.WidthFactor;
+            tracked.PricePerSquareMeter = preset.PricePerSquareMeter;
 
             // Remove tiers that are no longer present
             var incomingIds = preset.ThicknessTiers
                 .Where(t => t.Id != 0)
                 .Select(t => t.Id)
                 .ToHashSet();
-            foreach (var old in existingTiers)
-            {
-                if (!incomingIds.Contains(old.Id))
-                    db.ThicknessTiers.Remove(old);
-            }
+            var toRemove = tracked.ThicknessTiers
+                .Where(t => !incomingIds.Contains(t.Id))
+                .ToList();
+            foreach (var old in toRemove)
+                db.ThicknessTiers.Remove(old);
 
-            // Add or update tiers
-            foreach (var tier in preset.ThicknessTiers)
+            // Update existing tiers and add new ones
+            foreach (var incoming in preset.ThicknessTiers)
             {
-                tier.PresetId = preset.Id;
-                if (tier.Id == 0)
-                    db.ThicknessTiers.Add(tier);
+                var existing = tracked.ThicknessTiers.FirstOrDefault(t => t.Id == incoming.Id && incoming.Id != 0);
+                if (existing != null)
+                {
+                    existing.ThicknessMm = incoming.ThicknessMm;
+                    existing.PricePerSquareMeter = incoming.PricePerSquareMeter;
+                    existing.Label = incoming.Label;
+                }
                 else
-                    db.ThicknessTiers.Update(tier);
+                {
+                    tracked.ThicknessTiers.Add(new ThicknessTier
+                    {
+                        PresetId = preset.Id,
+                        ThicknessMm = incoming.ThicknessMm,
+                        PricePerSquareMeter = incoming.PricePerSquareMeter,
+                        Label = incoming.Label
+                    });
+                }
             }
 
-            db.AreaPricingPresets.Update(preset);
             db.SaveChanges();
         }
 
