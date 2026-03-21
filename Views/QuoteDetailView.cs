@@ -296,7 +296,7 @@ namespace SistemaCotizaciones.Views
             {
                 Filter = "Archivo PDF|*.pdf",
                 Title = "Exportar Cotización a PDF",
-                FileName = $"Cotizacion_{_quote.Id}_{sanitizedName}.pdf"
+                FileName = $"COT-{_quote.Date.Year}-{_quote.Id:D3}_{sanitizedName}.pdf"
             };
 
             if (saveDialog.ShowDialog() == DialogResult.OK)
