@@ -21,6 +21,9 @@ namespace SistemaCotizaciones.Views
         private TextBox txtNotes = null!;
         private DataGridView dgvItems = null!;
         private Label lblTotal = null!;
+        private Label lblSubtotal = null!;
+        private Label lblDiscount = null!;
+        private Label lblIva = null!;
         private Button btnMarkSent = null!;
         private Button btnAccept = null!;
         private Button btnReject = null!;
@@ -101,11 +104,26 @@ namespace SistemaCotizaciones.Views
             AppTheme.StyleSecondaryButton(btnBack);
             btnBack.Click += (s, e) => _navigator.GoBack();
 
-            lblTotal = new Label { AutoSize = true, Text = "Total: $0.00", Margin = new Padding(AppTheme.SpaceMD, AppTheme.SpaceSM, 0, 0) };
+            // Financial breakdown panel (vertical stack, right-aligned)
+            var breakdownPanel = new FlowLayoutPanel
+            {
+                FlowDirection = FlowDirection.TopDown,
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                WrapContents = false,
+                Margin = new Padding(AppTheme.SpaceMD, 0, 0, 0)
+            };
+
+            lblSubtotal = new Label { AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary, Text = "" };
+            lblDiscount = new Label { AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.Accent, Text = "", Visible = false };
+            lblIva = new Label { AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary, Text = "", Visible = false };
+            lblTotal = new Label { AutoSize = true, Text = "Total: $0.00" };
             AppTheme.StyleTotalLabel(lblTotal);
 
+            breakdownPanel.Controls.AddRange(new Control[] { lblSubtotal, lblDiscount, lblIva, lblTotal });
+
             rightFlow.Controls.Add(btnBack);
-            rightFlow.Controls.Add(lblTotal);
+            rightFlow.Controls.Add(breakdownPanel);
 
             // Items grid
             dgvItems = new DataGridView
@@ -143,6 +161,30 @@ namespace SistemaCotizaciones.Views
                 lblClientName.Text = _quote.ClientName;
                 lblDate.Text = _quote.Date.ToString("dd/MM/yyyy");
                 txtNotes.Text = _quote.Notes ?? string.Empty;
+
+                // Financial breakdown
+                lblSubtotal.Text = $"Subtotal: {_quote.Subtotal:C2}";
+
+                if (_quote.DiscountPercent > 0)
+                {
+                    lblDiscount.Text = $"Descuento ({_quote.DiscountPercent:0.##}%): -{_quote.DiscountAmount:C2}";
+                    lblDiscount.Visible = true;
+                }
+                else
+                {
+                    lblDiscount.Visible = false;
+                }
+
+                if (_quote.IvaRate > 0)
+                {
+                    lblIva.Text = $"IVA ({_quote.IvaRate:0.##}%): {_quote.IvaAmount:C2}";
+                    lblIva.Visible = true;
+                }
+                else
+                {
+                    lblIva.Visible = false;
+                }
+
                 lblTotal.Text = $"Total: {_quote.Total:C2}";
 
                 StyleStatusLabel(_quote.Status);

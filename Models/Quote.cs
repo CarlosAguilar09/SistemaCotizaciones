@@ -9,6 +9,11 @@ namespace SistemaCotizaciones.Models
         public DateTime Date { get; set; }
         public string? Notes { get; set; }
         public string Status { get; set; } = "Borrador";
+        public decimal DiscountPercent { get; set; }
+        public decimal IvaRate { get; set; } = 8m;
+        public decimal Subtotal { get; set; }
+        public decimal DiscountAmount { get; set; }
+        public decimal IvaAmount { get; set; }
         public decimal Total { get; set; }
 
         public List<QuoteItem> Items { get; set; } = new();

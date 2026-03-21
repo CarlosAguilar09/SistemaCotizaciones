@@ -317,11 +317,54 @@ namespace SistemaCotizaciones.Services
 
         private void AddTotal(Section section, Quote quote)
         {
-            var p = section.AddParagraph();
-            p.Format.SpaceBefore = Unit.FromCentimeter(0.5);
-            p.Format.Alignment = ParagraphAlignment.Right;
-            p.Style = "TotalLabel";
-            p.AddText($"Total: {quote.Total:C2}");
+            var totalsTable = section.AddTable();
+            totalsTable.Borders.Visible = false;
+            totalsTable.Format.Font.Size = 10;
+
+            // Two columns: label (right-aligned) + value (right-aligned)
+            var labelWidth = ContentWidth - 4;
+            totalsTable.AddColumn(Unit.FromCentimeter(labelWidth));
+            totalsTable.AddColumn(Unit.FromCentimeter(4));
+
+            totalsTable.Format.SpaceBefore = Unit.FromCentimeter(0.5);
+
+            // Subtotal row (always shown)
+            var row = totalsTable.AddRow();
+            row.Cells[0].Format.Alignment = ParagraphAlignment.Right;
+            row.Cells[1].Format.Alignment = ParagraphAlignment.Right;
+            row.Cells[0].AddParagraph("Subtotal:");
+            row.Cells[1].AddParagraph(quote.Subtotal.ToString("C2"));
+
+            // Discount row (only if discount > 0)
+            if (quote.DiscountPercent > 0)
+            {
+                row = totalsTable.AddRow();
+                row.Cells[0].Format.Alignment = ParagraphAlignment.Right;
+                row.Cells[1].Format.Alignment = ParagraphAlignment.Right;
+                var p = row.Cells[0].AddParagraph($"Descuento ({quote.DiscountPercent:0.##}%):");
+                p.Format.Font.Color = BrandAccent;
+                var pVal = row.Cells[1].AddParagraph($"-{quote.DiscountAmount:C2}");
+                pVal.Format.Font.Color = BrandAccent;
+            }
+
+            // IVA row (only if IVA > 0)
+            if (quote.IvaRate > 0)
+            {
+                row = totalsTable.AddRow();
+                row.Cells[0].Format.Alignment = ParagraphAlignment.Right;
+                row.Cells[1].Format.Alignment = ParagraphAlignment.Right;
+                row.Cells[0].AddParagraph($"IVA ({quote.IvaRate:0.##}%):");
+                row.Cells[1].AddParagraph(quote.IvaAmount.ToString("C2"));
+            }
+
+            // Total row (always shown, bold)
+            row = totalsTable.AddRow();
+            row.Cells[0].Format.Alignment = ParagraphAlignment.Right;
+            row.Cells[1].Format.Alignment = ParagraphAlignment.Right;
+            row.Format.Font.Bold = true;
+            row.Format.Font.Size = 13;
+            row.Cells[0].AddParagraph("Total:");
+            row.Cells[1].AddParagraph(quote.Total.ToString("C2"));
         }
 
         private void AddNotes(Section section, Quote quote)
@@ -353,10 +396,14 @@ namespace SistemaCotizaciones.Services
             p.Style = "TermsTitle";
             p.Format.SpaceAfter = Unit.FromCentimeter(0.2);
 
+            var ivaTermText = quote.IvaRate > 0
+                ? $"Los precios incluyen IVA ({quote.IvaRate:0.##}%)."
+                : "Los precios no incluyen IVA.";
+
             var terms = new[]
             {
                 "Precios expresados en Moneda Nacional (MXN).",
-                "Los precios no incluyen IVA.",
+                ivaTermText,
                 $"Cotización válida por {ValidityDays} días a partir de la fecha de emisión.",
                 "Se requiere un 50% de anticipo para iniciar la producción.",
                 "Tiempos de entrega sujetos a confirmación al momento de la orden.",

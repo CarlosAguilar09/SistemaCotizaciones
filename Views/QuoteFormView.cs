@@ -77,6 +77,11 @@ namespace SistemaCotizaciones.Views
         private NumericUpDown nudQuantity = null!;
         private DataGridView dgvItems = null!;
         private Label lblTotal = null!;
+        private Label lblSubtotal = null!;
+        private Label lblDiscount = null!;
+        private Label lblIva = null!;
+        private NumericUpDown nudDiscount = null!;
+        private ComboBox cmbIva = null!;
 
         private List<Material> _materials = new();
         private List<Material> _areaMaterials = new();
@@ -393,19 +398,69 @@ namespace SistemaCotizaciones.Views
 
             // -- Bottom bar --
             var (bottomBar, leftFlow, rightFlow) = AppTheme.CreateButtonBar();
+            bottomBar.Height = 100;
 
             var btnRemoveItem = AppTheme.CreateButton("Quitar Seleccionado", 150);
             AppTheme.StyleSecondaryButton(btnRemoveItem);
             btnRemoveItem.Click += BtnRemoveItem_Click;
-            leftFlow.Controls.Add(btnRemoveItem);
 
-            lblTotal = new Label
+            // Discount control
+            var lblDiscountLabel = new Label
             {
+                Text = "Descuento %:",
                 AutoSize = true,
-                Text = "Total: $0.00",
-                Margin = new Padding(0, 4, AppTheme.SpaceMD, 0)
+                Font = AppTheme.DefaultFont,
+                ForeColor = AppTheme.TextPrimary,
+                Margin = new Padding(AppTheme.SpaceMD, 8, 4, 0)
             };
+            nudDiscount = new NumericUpDown
+            {
+                Minimum = 0, Maximum = 100, DecimalPlaces = 2, Value = 0,
+                Width = 70, Font = AppTheme.DefaultFont,
+                Margin = new Padding(0, 6, AppTheme.SpaceMD, 0)
+            };
+            nudDiscount.ValueChanged += (s, e) => RecalculateTotal();
+
+            // IVA control
+            var lblIvaLabel = new Label
+            {
+                Text = "IVA:",
+                AutoSize = true,
+                Font = AppTheme.DefaultFont,
+                ForeColor = AppTheme.TextPrimary,
+                Margin = new Padding(0, 8, 4, 0)
+            };
+            cmbIva = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Width = 150, Font = AppTheme.DefaultFont,
+                Margin = new Padding(0, 6, 0, 0)
+            };
+            cmbIva.Items.AddRange(new object[] { "Sin IVA", "IVA 8% (Frontera)", "IVA 16% (General)" });
+            cmbIva.SelectedIndex = 1; // Default: 8% Frontera
+            cmbIva.SelectedIndexChanged += (s, e) => RecalculateTotal();
+
+            leftFlow.Controls.Add(btnRemoveItem);
+            leftFlow.Controls.Add(lblDiscountLabel);
+            leftFlow.Controls.Add(nudDiscount);
+            leftFlow.Controls.Add(lblIvaLabel);
+            leftFlow.Controls.Add(cmbIva);
+
+            // Financial breakdown (right side)
+            var breakdownPanel = new FlowLayoutPanel
+            {
+                FlowDirection = FlowDirection.TopDown,
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                WrapContents = false,
+                Margin = new Padding(0, 0, AppTheme.SpaceMD, 0)
+            };
+            lblSubtotal = new Label { AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary, Text = "Subtotal: $0.00" };
+            lblDiscount = new Label { AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.Accent, Text = "", Visible = false };
+            lblIva = new Label { AutoSize = true, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary, Text = "", Visible = false };
+            lblTotal = new Label { AutoSize = true, Text = "Total: $0.00", Margin = new Padding(0) };
             AppTheme.StyleTotalLabel(lblTotal);
+            breakdownPanel.Controls.AddRange(new Control[] { lblSubtotal, lblDiscount, lblIva, lblTotal });
 
             var btnSave = AppTheme.CreateButton("Guardar", AppTheme.ButtonWidthMD);
             AppTheme.StylePrimaryButton(btnSave);
@@ -416,7 +471,7 @@ namespace SistemaCotizaciones.Views
             btnBack.Click += (s, e) => _navigator.GoBack();
 
             // Right flow is RightToLeft: first added = rightmost
-            rightFlow.Controls.AddRange(new Control[] { btnBack, btnSave, lblTotal });
+            rightFlow.Controls.AddRange(new Control[] { btnBack, btnSave, breakdownPanel });
 
             // -- Items grid --
             dgvItems = new DataGridView
@@ -919,6 +974,15 @@ namespace SistemaCotizaciones.Views
                         cmbCliente.Text = quote.ClientName;
                         dtpDate.Value = quote.Date;
                         txtNotes.Text = quote.Notes ?? string.Empty;
+
+                        // Restore discount and IVA settings
+                        nudDiscount.Value = Math.Min(quote.DiscountPercent, nudDiscount.Maximum);
+                        cmbIva.SelectedIndex = quote.IvaRate switch
+                        {
+                            16m => 2,
+                            8m => 1,
+                            _ => 0
+                        };
 
                         var items = _quoteService.GetItemsByQuoteId(_quoteId.Value);
                         foreach (var item in items)
@@ -1450,6 +1514,8 @@ namespace SistemaCotizaciones.Views
                     Date = dtpDate.Value.Date,
                     Notes = string.IsNullOrWhiteSpace(txtNotes.Text) ? null : txtNotes.Text.Trim(),
                     Status = "Borrador",
+                    DiscountPercent = nudDiscount.Value,
+                    IvaRate = GetSelectedIvaRate(),
                 };
 
                 try
@@ -1471,6 +1537,8 @@ namespace SistemaCotizaciones.Views
                     ClienteId = matchedClient?.Id,
                     Date = dtpDate.Value.Date,
                     Notes = string.IsNullOrWhiteSpace(txtNotes.Text) ? null : txtNotes.Text.Trim(),
+                    DiscountPercent = nudDiscount.Value,
+                    IvaRate = GetSelectedIvaRate(),
                 };
 
                 try
@@ -1592,9 +1660,41 @@ namespace SistemaCotizaciones.Views
 
         private void RecalculateTotal()
         {
-            decimal total = _calcService.CalculateTotal(_items);
-            lblTotal.Text = $"Total: {total:C2}";
+            var discountPercent = nudDiscount.Value;
+            var ivaRate = GetSelectedIvaRate();
+            var totals = _calcService.CalculateQuoteTotals(_items, discountPercent, ivaRate);
+
+            lblSubtotal.Text = $"Subtotal: {totals.Subtotal:C2}";
+
+            if (discountPercent > 0)
+            {
+                lblDiscount.Text = $"Descuento ({discountPercent:0.##}%): -{totals.DiscountAmount:C2}";
+                lblDiscount.Visible = true;
+            }
+            else
+            {
+                lblDiscount.Visible = false;
+            }
+
+            if (ivaRate > 0)
+            {
+                lblIva.Text = $"IVA ({ivaRate:0.##}%): {totals.IvaAmount:C2}";
+                lblIva.Visible = true;
+            }
+            else
+            {
+                lblIva.Visible = false;
+            }
+
+            lblTotal.Text = $"Total: {totals.Total:C2}";
         }
+
+        private decimal GetSelectedIvaRate() => cmbIva.SelectedIndex switch
+        {
+            1 => 8m,
+            2 => 16m,
+            _ => 0m
+        };
 
         #endregion
     }

@@ -54,7 +54,11 @@ namespace SistemaCotizaciones.Services
 
         public void SaveQuote(Quote quote, List<QuoteItem> items)
         {
-            quote.Total = _calcService.CalculateTotal(items);
+            var totals = _calcService.CalculateQuoteTotals(items, quote.DiscountPercent, quote.IvaRate);
+            quote.Subtotal = totals.Subtotal;
+            quote.DiscountAmount = totals.DiscountAmount;
+            quote.IvaAmount = totals.IvaAmount;
+            quote.Total = totals.Total;
 
             foreach (var item in items)
             {
@@ -82,7 +86,11 @@ namespace SistemaCotizaciones.Services
                 _quoteItemRepo.Delete(oldItem.Id);
             }
 
-            quote.Total = _calcService.CalculateTotal(items);
+            var totals = _calcService.CalculateQuoteTotals(items, quote.DiscountPercent, quote.IvaRate);
+            quote.Subtotal = totals.Subtotal;
+            quote.DiscountAmount = totals.DiscountAmount;
+            quote.IvaAmount = totals.IvaAmount;
+            quote.Total = totals.Total;
             _quoteRepo.Update(quote);
 
             foreach (var item in items)
@@ -116,7 +124,9 @@ namespace SistemaCotizaciones.Services
                 ClienteId = original.ClienteId,
                 Date = DateTime.Now,
                 Notes = original.Notes,
-                Status = "Borrador"
+                Status = "Borrador",
+                DiscountPercent = original.DiscountPercent,
+                IvaRate = original.IvaRate
             };
 
             var newItems = originalItems.Select(i => new QuoteItem

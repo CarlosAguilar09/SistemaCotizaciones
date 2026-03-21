@@ -83,6 +83,15 @@ namespace SistemaCotizaciones.Data
             modelBuilder.Entity<Quote>()
                 .Property(q => q.Status)
                 .HasDefaultValue("Borrador");
+
+            // Default financial fields for quotes
+            modelBuilder.Entity<Quote>()
+                .Property(q => q.DiscountPercent)
+                .HasDefaultValue(0m);
+
+            modelBuilder.Entity<Quote>()
+                .Property(q => q.IvaRate)
+                .HasDefaultValue(8m);
         }
     }
 }
