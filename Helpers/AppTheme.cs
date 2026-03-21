@@ -385,5 +385,66 @@ namespace SistemaCotizaciones.Helpers
                 Margin = new Padding(0, 0, SpaceSM, 0)
             };
         }
+
+        // ── Dashboard metric card ──
+
+        public const int MetricCardHeight = 90;
+
+        /// <summary>
+        /// Styles a Panel as a KPI metric card with large value and descriptive label.
+        /// </summary>
+        public static void StyleMetricCard(Panel card, string emoji, string value, string label)
+        {
+            card.BackColor = Surface;
+            card.Padding = new Padding(SpaceMD);
+            card.Margin = new Padding(0, 0, SpaceMD, 0);
+
+            // Paint rounded border
+            card.Paint += (s, e) =>
+            {
+                using var pen = new Pen(BorderLight, 1);
+                e.Graphics.DrawRectangle(pen, 0, 0, card.Width - 1, card.Height - 1);
+            };
+
+            card.Controls.Clear();
+
+            var lblValue = new Label
+            {
+                Text = $"{emoji} {value}",
+                Font = new Font("Segoe UI", 16F, FontStyle.Bold),
+                ForeColor = Primary,
+                AutoSize = false,
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.BottomLeft,
+                Padding = new Padding(0, 0, 0, 0)
+            };
+
+            var lblLabel = new Label
+            {
+                Text = label,
+                Font = SmallFont,
+                ForeColor = TextSecondary,
+                AutoSize = false,
+                Dock = DockStyle.Bottom,
+                Height = 22,
+                TextAlign = ContentAlignment.TopLeft
+            };
+
+            card.Controls.Add(lblValue);
+            card.Controls.Add(lblLabel);
+        }
+
+        /// <summary>
+        /// Styles a section heading label for dashboard sections.
+        /// </summary>
+        public static void StyleSectionHeading(Label lbl)
+        {
+            lbl.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            lbl.ForeColor = TextSecondary;
+            lbl.AutoSize = false;
+            lbl.Height = 30;
+            lbl.TextAlign = ContentAlignment.BottomLeft;
+            lbl.Padding = new Padding(0, 0, 0, SpaceXS);
+        }
     }
 }
