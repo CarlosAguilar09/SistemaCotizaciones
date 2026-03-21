@@ -14,7 +14,7 @@ namespace SistemaCotizaciones.Views
         private readonly int? _quoteId;
         private readonly List<QuoteItem> _items = new();
 
-        private TextBox txtClientName = null!;
+        private ComboBox cmbCliente = null!;
         private DateTimePicker dtpDate = null!;
         private TextBox txtNotes = null!;
 
@@ -81,6 +81,7 @@ namespace SistemaCotizaciones.Views
         private List<Material> _materials = new();
         private List<Material> _areaMaterials = new();
         private List<AreaPricingPreset> _areaPresets = new();
+        private List<Cliente> _clients = new();
 
         public QuoteFormView(Navigator navigator, int? quoteId = null)
         {
@@ -121,12 +122,15 @@ namespace SistemaCotizaciones.Views
                 ForeColor = AppTheme.TextPrimary,
                 Margin = new Padding(0, 0, AppTheme.SpaceSM, 0)
             };
-            txtClientName = new TextBox
+            cmbCliente = new ComboBox
             {
                 Anchor = AnchorStyles.Left | AnchorStyles.Right,
-                Margin = new Padding(0, 0, AppTheme.SpaceLG, 0)
+                Margin = new Padding(0, 0, AppTheme.SpaceLG, 0),
+                DropDownStyle = ComboBoxStyle.DropDown,
+                AutoCompleteMode = AutoCompleteMode.SuggestAppend,
+                AutoCompleteSource = AutoCompleteSource.ListItems
             };
-            AppTheme.StyleTextBox(txtClientName);
+            AppTheme.StyleComboBox(cmbCliente);
 
             var lblDate = new Label
             {
@@ -145,7 +149,7 @@ namespace SistemaCotizaciones.Views
             };
 
             topTable.Controls.Add(lblClient, 0, 0);
-            topTable.Controls.Add(txtClientName, 1, 0);
+            topTable.Controls.Add(cmbCliente, 1, 0);
             topTable.Controls.Add(lblDate, 2, 0);
             topTable.Controls.Add(dtpDate, 3, 0);
 
@@ -881,6 +885,12 @@ namespace SistemaCotizaciones.Views
         {
             try
             {
+                // Load clients for autocomplete
+                _clients = _quoteService.GetAvailableClients();
+                cmbCliente.Items.Clear();
+                foreach (var client in _clients)
+                    cmbCliente.Items.Add(client.Name);
+
                 // Load products
                 var products = _quoteService.GetAvailableProducts();
                 cmbProduct.DisplayMember = "Name";
@@ -906,7 +916,7 @@ namespace SistemaCotizaciones.Views
                     var quote = _quoteService.GetById(_quoteId.Value);
                     if (quote != null)
                     {
-                        txtClientName.Text = quote.ClientName;
+                        cmbCliente.Text = quote.ClientName;
                         dtpDate.Value = quote.Date;
                         txtNotes.Text = quote.Notes ?? string.Empty;
 
@@ -1412,7 +1422,7 @@ namespace SistemaCotizaciones.Views
 
         private void BtnSave_Click(object? sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtClientName.Text))
+            if (string.IsNullOrWhiteSpace(cmbCliente.Text))
             {
                 MessageBox.Show("El nombre del cliente es obligatorio.", "Validación",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -1426,13 +1436,20 @@ namespace SistemaCotizaciones.Views
                 return;
             }
 
+            // Resolve client: match by name or leave unlinked
+            var clientName = cmbCliente.Text.Trim();
+            var matchedClient = _clients.FirstOrDefault(c =>
+                c.Name.Equals(clientName, StringComparison.OrdinalIgnoreCase));
+
             if (_quoteId == null)
             {
                 var quote = new Quote
                 {
-                    ClientName = txtClientName.Text.Trim(),
+                    ClientName = clientName,
+                    ClienteId = matchedClient?.Id,
                     Date = dtpDate.Value.Date,
                     Notes = string.IsNullOrWhiteSpace(txtNotes.Text) ? null : txtNotes.Text.Trim(),
+                    Status = "Borrador",
                 };
 
                 try
@@ -1450,7 +1467,8 @@ namespace SistemaCotizaciones.Views
                 var quote = new Quote
                 {
                     Id = _quoteId.Value,
-                    ClientName = txtClientName.Text.Trim(),
+                    ClientName = clientName,
+                    ClienteId = matchedClient?.Id,
                     Date = dtpDate.Value.Date,
                     Notes = string.IsNullOrWhiteSpace(txtNotes.Text) ? null : txtNotes.Text.Trim(),
                 };

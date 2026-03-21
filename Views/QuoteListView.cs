@@ -9,6 +9,7 @@ namespace SistemaCotizaciones.Views
         private readonly QuoteService _quoteService = new();
 
         private DataGridView dgvQuotes = null!;
+        private ComboBox cmbStatusFilter = null!;
         private Button btnNew = null!;
         private Button btnEdit = null!;
         private Button btnViewDetails = null!;
@@ -37,6 +38,33 @@ namespace SistemaCotizaciones.Views
                 AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
             };
             AppTheme.StyleDataGridView(dgvQuotes);
+            dgvQuotes.CellFormatting += DgvQuotes_CellFormatting;
+
+            // Toolbar with status filter
+            var (toolbar, toolbarFlow) = AppTheme.CreateToolbar();
+
+            var lblFilter = new Label
+            {
+                Text = "Estado:",
+                AutoSize = true,
+                Font = AppTheme.DefaultFont,
+                ForeColor = AppTheme.TextPrimary,
+                Anchor = AnchorStyles.Left,
+                Margin = new Padding(0, 6, 4, 0)
+            };
+
+            cmbStatusFilter = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Width = 150
+            };
+            AppTheme.StyleComboBox(cmbStatusFilter);
+            cmbStatusFilter.Items.AddRange(new object[] { "Todos", "Borrador", "Enviada", "Aceptada", "Rechazada" });
+            cmbStatusFilter.SelectedIndex = 0;
+            cmbStatusFilter.SelectedIndexChanged += (s, e) => LoadQuotes();
+
+            toolbarFlow.Controls.Add(lblFilter);
+            toolbarFlow.Controls.Add(cmbStatusFilter);
 
             // Bottom button bar using responsive layout
             var (buttonBar, leftFlow, rightFlow) = AppTheme.CreateButtonBar();
@@ -68,8 +96,10 @@ namespace SistemaCotizaciones.Views
             btnBack.Click += (s, e) => _navigator.GoBack();
             rightFlow.Controls.Add(btnBack);
 
+            // Docking order: Fill first, then Bottom, then Top
             Controls.Add(dgvQuotes);
             Controls.Add(buttonBar);
+            Controls.Add(toolbar);
 
             LoadQuotes();
         }
@@ -81,14 +111,25 @@ namespace SistemaCotizaciones.Views
             try
             {
                 var quotes = _quoteService.GetAll();
+
+                var selectedStatus = cmbStatusFilter.SelectedItem?.ToString();
+                if (!string.IsNullOrEmpty(selectedStatus) && selectedStatus != "Todos")
+                    quotes = quotes.Where(q => q.Status == selectedStatus).ToList();
+
                 dgvQuotes.DataSource = quotes;
 
                 if (dgvQuotes.Columns["Id"] is DataGridViewColumn colId)
                     colId.Visible = false;
                 if (dgvQuotes.Columns["Items"] is DataGridViewColumn colItems)
                     colItems.Visible = false;
+                if (dgvQuotes.Columns["ClienteId"] is DataGridViewColumn colClienteId)
+                    colClienteId.Visible = false;
+                if (dgvQuotes.Columns["Cliente"] is DataGridViewColumn colCliente)
+                    colCliente.Visible = false;
                 if (dgvQuotes.Columns["ClientName"] is DataGridViewColumn colClient)
                     colClient.HeaderText = "Cliente";
+                if (dgvQuotes.Columns["Status"] is DataGridViewColumn colStatus)
+                    colStatus.HeaderText = "Estado";
                 if (dgvQuotes.Columns["Date"] is DataGridViewColumn colDate)
                 {
                     colDate.HeaderText = "Fecha";
@@ -105,6 +146,41 @@ namespace SistemaCotizaciones.Views
             catch (Exception ex)
             {
                 ErrorHelper.ShowError("Ocurrió un error al cargar las cotizaciones.", ex);
+            }
+        }
+
+        private void DgvQuotes_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (dgvQuotes.Columns[e.ColumnIndex].Name != "Status" || e.Value == null)
+                return;
+
+            var status = e.Value.ToString();
+            switch (status)
+            {
+                case "Borrador":
+                    e.CellStyle.BackColor = Color.FromArgb(189, 195, 199);
+                    e.CellStyle.ForeColor = Color.Black;
+                    e.CellStyle.SelectionBackColor = Color.FromArgb(189, 195, 199);
+                    e.CellStyle.SelectionForeColor = Color.Black;
+                    break;
+                case "Enviada":
+                    e.CellStyle.BackColor = Color.FromArgb(116, 185, 255);
+                    e.CellStyle.ForeColor = Color.Black;
+                    e.CellStyle.SelectionBackColor = Color.FromArgb(116, 185, 255);
+                    e.CellStyle.SelectionForeColor = Color.Black;
+                    break;
+                case "Aceptada":
+                    e.CellStyle.BackColor = Color.FromArgb(85, 239, 196);
+                    e.CellStyle.ForeColor = Color.Black;
+                    e.CellStyle.SelectionBackColor = Color.FromArgb(85, 239, 196);
+                    e.CellStyle.SelectionForeColor = Color.Black;
+                    break;
+                case "Rechazada":
+                    e.CellStyle.BackColor = Color.FromArgb(255, 118, 117);
+                    e.CellStyle.ForeColor = Color.White;
+                    e.CellStyle.SelectionBackColor = Color.FromArgb(255, 118, 117);
+                    e.CellStyle.SelectionForeColor = Color.White;
+                    break;
             }
         }
 

@@ -6,6 +6,7 @@ namespace SistemaCotizaciones.Data
     public class AppDbContext : DbContext
     {
         public DbSet<Product> Products { get; set; }
+        public DbSet<Cliente> Clientes { get; set; }
         public DbSet<Quote> Quotes { get; set; }
         public DbSet<QuoteItem> QuoteItems { get; set; }
         public DbSet<Material> Materials { get; set; }
@@ -70,6 +71,18 @@ namespace SistemaCotizaciones.Data
             modelBuilder.Entity<QuoteItem>()
                 .Property(qi => qi.PricingType)
                 .HasDefaultValue("Fijo");
+
+            // Quote optional FK to Cliente
+            modelBuilder.Entity<Quote>()
+                .HasOne(q => q.Cliente)
+                .WithMany()
+                .HasForeignKey(q => q.ClienteId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Default Status for new quotes
+            modelBuilder.Entity<Quote>()
+                .Property(q => q.Status)
+                .HasDefaultValue("Borrador");
         }
     }
 }

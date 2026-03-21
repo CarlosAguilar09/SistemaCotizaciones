@@ -16,9 +16,14 @@ namespace SistemaCotizaciones.Views
 
         private Label lblClientName = null!;
         private Label lblDate = null!;
+        private Label lblStatus = null!;
+        private Label lblContactInfo = null!;
         private TextBox txtNotes = null!;
         private DataGridView dgvItems = null!;
         private Label lblTotal = null!;
+        private Button btnMarkSent = null!;
+        private Button btnAccept = null!;
+        private Button btnReject = null!;
 
         public QuoteDetailView(Navigator navigator, int quoteId)
         {
@@ -34,7 +39,7 @@ namespace SistemaCotizaciones.Views
             AppTheme.ApplyTo(this);
 
             // Top info panel using responsive form layout
-            var formTable = AppTheme.CreateFormLayout(3);
+            var formTable = AppTheme.CreateFormLayout(5);
 
             // Row 0: Cliente
             lblClientName = new Label { Text = "-", AutoSize = false, Dock = DockStyle.Fill, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary };
@@ -44,10 +49,18 @@ namespace SistemaCotizaciones.Views
             lblDate = new Label { Text = "-", AutoSize = false, Dock = DockStyle.Fill, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary };
             AppTheme.AddFormRow(formTable, 1, "Fecha:", lblDate);
 
-            // Row 2: Notas (taller row)
-            formTable.RowStyles[2] = new RowStyle(SizeType.Absolute, 50);
+            // Row 2: Estado
+            lblStatus = new Label { Text = "-", AutoSize = true, Dock = DockStyle.None };
+            AppTheme.AddFormRow(formTable, 2, "Estado:", lblStatus);
+
+            // Row 3: Contacto
+            lblContactInfo = new Label { Text = "—", AutoSize = false, Dock = DockStyle.Fill, Font = AppTheme.DefaultFont, ForeColor = AppTheme.TextPrimary };
+            AppTheme.AddFormRow(formTable, 3, "Contacto:", lblContactInfo);
+
+            // Row 4: Notas (taller row)
+            formTable.RowStyles[4] = new RowStyle(SizeType.Absolute, 50);
             txtNotes = new TextBox { Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, BackColor = AppTheme.Surface, BorderStyle = BorderStyle.FixedSingle };
-            AppTheme.AddFormRow(formTable, 2, "Notas:", txtNotes);
+            AppTheme.AddFormRow(formTable, 4, "Notas:", txtNotes);
 
             // Bottom bar using responsive button layout
             var (bottomBar, leftFlow, rightFlow) = AppTheme.CreateButtonBar();
@@ -60,7 +73,23 @@ namespace SistemaCotizaciones.Views
             AppTheme.StyleSecondaryButton(btnViewCalc);
             btnViewCalc.Click += BtnViewCalc_Click;
 
-            leftFlow.Controls.AddRange(new Control[] { btnExportPdf, btnViewCalc });
+            var separator = new Label { Width = 20, AutoSize = false };
+
+            btnMarkSent = AppTheme.CreateButton("Marcar Enviada", AppTheme.ButtonWidthLG);
+            AppTheme.StyleSecondaryButton(btnMarkSent);
+            btnMarkSent.Click += BtnMarkSent_Click;
+
+            btnAccept = AppTheme.CreateButton("Aceptar", AppTheme.ButtonWidthSM);
+            AppTheme.StyleSecondaryButton(btnAccept);
+            btnAccept.BackColor = Color.FromArgb(85, 239, 196);
+            btnAccept.ForeColor = Color.FromArgb(45, 52, 54);
+            btnAccept.Click += BtnAccept_Click;
+
+            btnReject = AppTheme.CreateButton("Rechazar", AppTheme.ButtonWidthSM);
+            AppTheme.StyleDangerButton(btnReject);
+            btnReject.Click += BtnReject_Click;
+
+            leftFlow.Controls.AddRange(new Control[] { btnExportPdf, btnViewCalc, separator, btnMarkSent, btnAccept, btnReject });
 
             var btnBack = AppTheme.CreateButton("Volver", AppTheme.ButtonWidthSM);
             AppTheme.StyleSecondaryButton(btnBack);
@@ -110,12 +139,53 @@ namespace SistemaCotizaciones.Views
                 txtNotes.Text = _quote.Notes ?? string.Empty;
                 lblTotal.Text = $"Total: {_quote.Total:C2}";
 
+                StyleStatusLabel(_quote.Status);
+                UpdateStatusButtons(_quote.Status);
+
+                if (_quote.Cliente != null)
+                {
+                    var parts = new List<string>();
+                    if (!string.IsNullOrWhiteSpace(_quote.Cliente.Phone))
+                        parts.Add($"\U0001F4DE {_quote.Cliente.Phone}");
+                    if (!string.IsNullOrWhiteSpace(_quote.Cliente.Email))
+                        parts.Add($"\u2709 {_quote.Cliente.Email}");
+                    lblContactInfo.Text = parts.Count > 0 ? string.Join("  ", parts) : "—";
+                }
+                else
+                {
+                    lblContactInfo.Text = "—";
+                }
+
                 BindItemsGrid();
             }
             catch (Exception ex)
             {
                 ErrorHelper.ShowError("Ocurrió un error al cargar la cotización.", ex);
             }
+        }
+
+        private void StyleStatusLabel(string status)
+        {
+            lblStatus.Text = status;
+            lblStatus.AutoSize = true;
+            lblStatus.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            lblStatus.Padding = new Padding(8, 2, 8, 2);
+
+            (lblStatus.BackColor, lblStatus.ForeColor) = status switch
+            {
+                "Borrador" => (Color.FromArgb(189, 195, 199), Color.FromArgb(45, 52, 54)),
+                "Enviada" => (Color.FromArgb(116, 185, 255), Color.FromArgb(45, 52, 54)),
+                "Aceptada" => (Color.FromArgb(85, 239, 196), Color.FromArgb(45, 52, 54)),
+                "Rechazada" => (Color.FromArgb(255, 118, 117), Color.White),
+                _ => (SystemColors.Control, SystemColors.ControlText)
+            };
+        }
+
+        private void UpdateStatusButtons(string status)
+        {
+            btnMarkSent.Visible = status == "Borrador";
+            btnAccept.Visible = status == "Enviada";
+            btnReject.Visible = status == "Enviada";
         }
 
         private void BindItemsGrid()
@@ -157,6 +227,45 @@ namespace SistemaCotizaciones.Views
             "Personalizado" => "Personalizado",
             _ => pricingType
         };
+
+        private void BtnMarkSent_Click(object? sender, EventArgs e)
+        {
+            try
+            {
+                _quoteService.UpdateStatus(_quoteId, "Enviada");
+                LoadData();
+            }
+            catch (Exception ex)
+            {
+                ErrorHelper.ShowError("Error al actualizar el estado.", ex);
+            }
+        }
+
+        private void BtnAccept_Click(object? sender, EventArgs e)
+        {
+            try
+            {
+                _quoteService.UpdateStatus(_quoteId, "Aceptada");
+                LoadData();
+            }
+            catch (Exception ex)
+            {
+                ErrorHelper.ShowError("Error al actualizar el estado.", ex);
+            }
+        }
+
+        private void BtnReject_Click(object? sender, EventArgs e)
+        {
+            try
+            {
+                _quoteService.UpdateStatus(_quoteId, "Rechazada");
+                LoadData();
+            }
+            catch (Exception ex)
+            {
+                ErrorHelper.ShowError("Error al actualizar el estado.", ex);
+            }
+        }
 
         private void BtnViewCalc_Click(object? sender, EventArgs e)
         {

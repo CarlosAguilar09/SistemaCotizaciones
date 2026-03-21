@@ -80,6 +80,9 @@ namespace SistemaCotizaciones
 
             if (!db.AreaPricingPresets.Any())
                 SeedAreaPricingPresets(db);
+
+            if (!db.Clientes.Any())
+                SeedClientes(db);
         }
 
         private static void SeedProducts(AppDbContext db)
@@ -351,6 +354,20 @@ namespace SistemaCotizaciones
             };
 
             db.AreaPricingPresets.AddRange(presets);
+            db.SaveChanges();
+        }
+
+        private static void SeedClientes(AppDbContext db)
+        {
+            var clientes = new List<Cliente>
+            {
+                new Cliente { Name = "Tacos El Gordo", Phone = "686-555-0101", Email = "contacto@tacoselgordo.mx" },
+                new Cliente { Name = "Farmacia San Martín", Phone = "686-555-0202", Email = "compras@farmaciasanmartin.com" },
+                new Cliente { Name = "Refaccionaria López", Phone = "686-555-0303", Email = "refaccionarialopez@gmail.com" },
+                new Cliente { Name = "Consultorio Dental Sonrisa", Phone = "686-555-0404" },
+            };
+
+            db.Clientes.AddRange(clientes);
             db.SaveChanges();
         }
     }

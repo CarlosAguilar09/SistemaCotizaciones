@@ -9,6 +9,7 @@ namespace SistemaCotizaciones.Services
         private readonly QuoteItemRepository _quoteItemRepo = new();
         private readonly ProductRepository _productRepo = new();
         private readonly MaterialRepository _materialRepo = new();
+        private readonly ClienteRepository _clienteRepo = new();
         private readonly QuoteCalculationService _calcService = new();
 
         public List<Quote> GetAll()
@@ -34,6 +35,21 @@ namespace SistemaCotizaciones.Services
         public List<Material> GetAvailableMaterials()
         {
             return _materialRepo.GetAll();
+        }
+
+        public List<Cliente> GetAvailableClients()
+        {
+            return _clienteRepo.GetAll();
+        }
+
+        public void UpdateStatus(int quoteId, string status)
+        {
+            var quote = _quoteRepo.GetById(quoteId);
+            if (quote != null)
+            {
+                quote.Status = status;
+                _quoteRepo.Update(quote);
+            }
         }
 
         public void SaveQuote(Quote quote, List<QuoteItem> items)

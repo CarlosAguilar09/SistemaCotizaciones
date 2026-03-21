@@ -93,6 +93,23 @@ namespace SistemaCotizaciones.Services
             paragraph.AddFormattedText("Cliente: ", "Label");
             paragraph.AddText(quote.ClientName);
 
+            if (quote.Cliente != null)
+            {
+                if (!string.IsNullOrWhiteSpace(quote.Cliente.Phone))
+                {
+                    paragraph = section.AddParagraph();
+                    paragraph.AddFormattedText("Teléfono: ", "Label");
+                    paragraph.AddText(quote.Cliente.Phone);
+                }
+
+                if (!string.IsNullOrWhiteSpace(quote.Cliente.Email))
+                {
+                    paragraph = section.AddParagraph();
+                    paragraph.AddFormattedText("Correo: ", "Label");
+                    paragraph.AddText(quote.Cliente.Email);
+                }
+            }
+
             paragraph = section.AddParagraph();
             paragraph.AddFormattedText("Fecha: ", "Label");
             paragraph.AddText(quote.Date.ToString("dd/MM/yyyy"));

@@ -9,6 +9,7 @@ namespace SistemaCotizaciones.Views
         private Button btnMaterials = null!;
         private Button btnQuotes = null!;
         private Button btnPresets = null!;
+        private Button btnClientes = null!;
 
         public DashboardView(Navigator navigator)
         {
@@ -43,11 +44,22 @@ namespace SistemaCotizaciones.Views
                 _navigator.NavigateTo(new MaterialListView(_navigator), "Materiales");
             AppTheme.StyleCardButton(btnMaterials, "🎨");
 
+            btnClientes = new Button
+            {
+                Text = "Clientes",
+                Size = new Size(280, 80),
+                Location = new Point(200, 280)
+            };
+            btnClientes.Anchor = AnchorStyles.None;
+            btnClientes.Click += (s, e) =>
+                _navigator.NavigateTo(new ClienteListView(_navigator), "Clientes");
+            AppTheme.StyleCardButton(btnClientes, "👤");
+
             btnQuotes = new Button
             {
                 Text = "Cotizaciones",
                 Size = new Size(280, 80),
-                Location = new Point(200, 280)
+                Location = new Point(200, 380)
             };
             btnQuotes.Anchor = AnchorStyles.None;
             btnQuotes.Click += (s, e) =>
@@ -58,7 +70,7 @@ namespace SistemaCotizaciones.Views
             {
                 Text = "Estándares de Precio",
                 Size = new Size(280, 80),
-                Location = new Point(200, 380)
+                Location = new Point(200, 480)
             };
             btnPresets.Anchor = AnchorStyles.None;
             btnPresets.Click += (s, e) =>
@@ -67,6 +79,7 @@ namespace SistemaCotizaciones.Views
 
             Controls.Add(btnProducts);
             Controls.Add(btnMaterials);
+            Controls.Add(btnClientes);
             Controls.Add(btnQuotes);
             Controls.Add(btnPresets);
         }
@@ -79,17 +92,18 @@ namespace SistemaCotizaciones.Views
 
         private void CenterButtons()
         {
-            if (btnProducts == null || btnMaterials == null || btnQuotes == null || btnPresets == null) return;
+            if (btnProducts == null || btnMaterials == null || btnClientes == null || btnQuotes == null || btnPresets == null) return;
 
+            var buttons = new[] { btnProducts, btnMaterials, btnClientes, btnQuotes, btnPresets };
             int spacing = AppTheme.SpaceXL;
-            int totalHeight = btnProducts.Height + spacing + btnMaterials.Height + spacing + btnQuotes.Height + spacing + btnPresets.Height;
+            int totalHeight = buttons.Length * buttons[0].Height + (buttons.Length - 1) * spacing;
             int startY = (ClientSize.Height - totalHeight) / 2;
-            int centerX = (ClientSize.Width - btnProducts.Width) / 2;
+            int centerX = (ClientSize.Width - buttons[0].Width) / 2;
 
-            btnProducts.Location = new Point(centerX, startY);
-            btnMaterials.Location = new Point(centerX, startY + btnProducts.Height + spacing);
-            btnQuotes.Location = new Point(centerX, startY + btnProducts.Height + spacing + btnMaterials.Height + spacing);
-            btnPresets.Location = new Point(centerX, startY + btnProducts.Height + spacing + btnMaterials.Height + spacing + btnQuotes.Height + spacing);
+            for (int i = 0; i < buttons.Length; i++)
+            {
+                buttons[i].Location = new Point(centerX, startY + i * (buttons[0].Height + spacing));
+            }
         }
     }
 }

@@ -17,6 +17,7 @@ namespace SistemaCotizaciones.Repositories
             using var db = new AppDbContext();
             return db.Quotes
                 .Include(q => q.Items)
+                .Include(q => q.Cliente)
                 .AsNoTracking()
                 .FirstOrDefault(q => q.Id == id);
         }
