@@ -91,6 +91,12 @@ namespace SistemaCotizaciones.Views
 
             leftFlow.Controls.AddRange(new Control[] { btnExportPdf, btnViewCalc, separator, btnMarkSent, btnAccept, btnReject });
 
+            var btnDuplicate = AppTheme.CreateButton("Duplicar", AppTheme.ButtonWidthMD);
+            AppTheme.StyleSecondaryButton(btnDuplicate);
+            btnDuplicate.Click += BtnDuplicate_Click;
+
+            rightFlow.Controls.Add(btnDuplicate);
+
             var btnBack = AppTheme.CreateButton("Volver", AppTheme.ButtonWidthSM);
             AppTheme.StyleSecondaryButton(btnBack);
             btnBack.Click += (s, e) => _navigator.GoBack();
@@ -322,6 +328,25 @@ namespace SistemaCotizaciones.Views
                 {
                     ErrorHelper.ShowError("Error al exportar el PDF.", ex);
                 }
+            }
+        }
+
+        private void BtnDuplicate_Click(object? sender, EventArgs e)
+        {
+            try
+            {
+                var result = MessageBox.Show(
+                    "¿Desea crear una copia de esta cotización?",
+                    "Duplicar Cotización", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+                if (result != DialogResult.Yes) return;
+
+                int newQuoteId = _quoteService.DuplicateQuote(_quoteId);
+                _navigator.NavigateTo(new QuoteFormView(_navigator, newQuoteId), "Editar Cotización");
+            }
+            catch (Exception ex)
+            {
+                ErrorHelper.ShowError("Error al duplicar la cotización.", ex);
             }
         }
     }

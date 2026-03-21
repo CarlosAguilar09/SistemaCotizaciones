@@ -12,6 +12,7 @@ namespace SistemaCotizaciones.Views
         private ComboBox cmbStatusFilter = null!;
         private Button btnNew = null!;
         private Button btnEdit = null!;
+        private Button btnDuplicate = null!;
         private Button btnViewDetails = null!;
         private Button btnDelete = null!;
 
@@ -72,21 +73,25 @@ namespace SistemaCotizaciones.Views
             // Left flow: Nueva, Editar, Ver Detalles, Eliminar
             btnNew = AppTheme.CreateButton("Nueva", AppTheme.ButtonWidthMD);
             btnEdit = AppTheme.CreateButton("Editar", AppTheme.ButtonWidthSM);
+            btnDuplicate = AppTheme.CreateButton("Duplicar", AppTheme.ButtonWidthMD);
             btnViewDetails = AppTheme.CreateButton("Ver Detalles", AppTheme.ButtonWidthLG);
             btnDelete = AppTheme.CreateButton("Eliminar", AppTheme.ButtonWidthSM);
 
             AppTheme.StylePrimaryButton(btnNew);
             AppTheme.StyleSecondaryButton(btnEdit);
+            AppTheme.StyleSecondaryButton(btnDuplicate);
             AppTheme.StyleSecondaryButton(btnViewDetails);
             AppTheme.StyleDangerButton(btnDelete);
 
             btnNew.Click += BtnNew_Click;
             btnEdit.Click += BtnEdit_Click;
+            btnDuplicate.Click += BtnDuplicate_Click;
             btnViewDetails.Click += BtnViewDetails_Click;
             btnDelete.Click += BtnDelete_Click;
 
             leftFlow.Controls.Add(btnNew);
             leftFlow.Controls.Add(btnEdit);
+            leftFlow.Controls.Add(btnDuplicate);
             leftFlow.Controls.Add(btnViewDetails);
             leftFlow.Controls.Add(btnDelete);
 
@@ -200,6 +205,34 @@ namespace SistemaCotizaciones.Views
 
             int quoteId = dgvQuotes.CurrentRow.Cells["Id"].Value is int id ? id : 0;
             _navigator.NavigateTo(new QuoteFormView(_navigator, quoteId), "Editar Cotización");
+        }
+
+        private void BtnDuplicate_Click(object? sender, EventArgs e)
+        {
+            if (dgvQuotes.CurrentRow == null)
+            {
+                MessageBox.Show("Seleccione una cotización para duplicar.", "Validación",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                int quoteId = dgvQuotes.CurrentRow.Cells["Id"].Value is int id ? id : 0;
+
+                var result = MessageBox.Show(
+                    "¿Desea crear una copia de esta cotización?",
+                    "Duplicar Cotización", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+                if (result != DialogResult.Yes) return;
+
+                int newQuoteId = _quoteService.DuplicateQuote(quoteId);
+                _navigator.NavigateTo(new QuoteFormView(_navigator, newQuoteId), "Editar Cotización");
+            }
+            catch (Exception ex)
+            {
+                ErrorHelper.ShowError("Error al duplicar la cotización.", ex);
+            }
         }
 
         private void BtnViewDetails_Click(object? sender, EventArgs e)

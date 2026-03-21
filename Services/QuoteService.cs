@@ -102,6 +102,39 @@ namespace SistemaCotizaciones.Services
             }
         }
 
+        public int DuplicateQuote(int originalQuoteId)
+        {
+            var original = _quoteRepo.GetById(originalQuoteId);
+            if (original == null)
+                throw new InvalidOperationException("No se encontró la cotización original.");
+
+            var originalItems = _quoteItemRepo.GetByQuoteId(originalQuoteId);
+
+            var newQuote = new Quote
+            {
+                ClientName = original.ClientName,
+                ClienteId = original.ClienteId,
+                Date = DateTime.Now,
+                Notes = original.Notes,
+                Status = "Borrador"
+            };
+
+            var newItems = originalItems.Select(i => new QuoteItem
+            {
+                ProductId = i.ProductId,
+                MaterialOptionId = i.MaterialOptionId,
+                Quantity = i.Quantity,
+                UnitPrice = i.UnitPrice,
+                Subtotal = i.Subtotal,
+                Description = i.Description,
+                PricingType = i.PricingType,
+                CalculationData = i.CalculationData
+            }).ToList();
+
+            SaveQuote(newQuote, newItems);
+            return newQuote.Id;
+        }
+
         public void Delete(int id)
         {
             _quoteRepo.Delete(id);
