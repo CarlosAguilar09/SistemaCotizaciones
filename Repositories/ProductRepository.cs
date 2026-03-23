@@ -31,6 +31,13 @@ namespace SistemaCotizaciones.Repositories
             db.SaveChanges();
         }
 
+        public void AddRange(List<Product> products)
+        {
+            using var db = new AppDbContext();
+            db.Products.AddRange(products);
+            db.SaveChanges();
+        }
+
         public void Update(Product product)
         {
             using var db = new AppDbContext();

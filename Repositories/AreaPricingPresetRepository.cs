@@ -32,6 +32,13 @@ namespace SistemaCotizaciones.Repositories
             db.SaveChanges();
         }
 
+        public void AddRange(List<AreaPricingPreset> presets)
+        {
+            using var db = new AppDbContext();
+            db.AreaPricingPresets.AddRange(presets);
+            db.SaveChanges();
+        }
+
         public void Update(AreaPricingPreset preset)
         {
             using var db = new AppDbContext();

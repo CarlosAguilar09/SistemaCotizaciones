@@ -8,6 +8,11 @@ namespace SistemaCotizaciones
         private Navigator _navigator = null!;
         private Label _headerLabel = null!;
 
+        private static readonly string AppDataDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "CUBOSigns", "SistemaCotizaciones");
+        private static readonly string OnboardingMarkerPath = Path.Combine(AppDataDir, "onboarding.done");
+
         public MainForm()
         {
             InitializeComponent();
@@ -32,9 +37,46 @@ namespace SistemaCotizaciones
                     : $"CUBO Signs — {title}";
             };
 
-            // Start at the dashboard
+            // Check if onboarding has been completed
+            if (!File.Exists(OnboardingMarkerPath))
+            {
+                ShowOnboardingWizard();
+            }
+            else
+            {
+                ShowDashboard();
+            }
+        }
+
+        private void ShowDashboard()
+        {
             var dashboard = new DashboardView(_navigator);
             _navigator.NavigateTo(dashboard, "CUBO Signs — Sistema de Cotizaciones");
+        }
+
+        private void ShowOnboardingWizard()
+        {
+            var wizard = new OnboardingWizardView(_navigator);
+            wizard.OnComplete = () =>
+            {
+                MarkOnboardingComplete();
+                var dashboard = new DashboardView(_navigator);
+                _navigator.ClearAndNavigateTo(dashboard, "CUBO Signs — Sistema de Cotizaciones");
+            };
+            _navigator.NavigateTo(wizard, "Bienvenido a CUBO Signs");
+        }
+
+        private static void MarkOnboardingComplete()
+        {
+            try
+            {
+                Directory.CreateDirectory(AppDataDir);
+                File.WriteAllText(OnboardingMarkerPath, DateTime.Now.ToString("o"));
+            }
+            catch (Exception ex)
+            {
+                ErrorHelper.LogError(ex, "Error al crear marcador de onboarding");
+            }
         }
     }
 }

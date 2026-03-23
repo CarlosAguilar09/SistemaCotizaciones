@@ -79,6 +79,34 @@ namespace SistemaCotizaciones.Helpers
 
         public bool CanGoBack => _history.Count > 0;
 
+        /// <summary>
+        /// Clears all navigation history and navigates to a new view.
+        /// Used for transitions where going back should not be possible (e.g., after onboarding).
+        /// </summary>
+        public void ClearAndNavigateTo(UserControl view, string title = "")
+        {
+            // Dispose current view
+            if (_currentView != null)
+            {
+                _contentPanel.Controls.Remove(_currentView);
+                try { _currentView.Dispose(); }
+                catch (Exception ex) { ErrorHelper.LogError(ex, "Error al liberar vista actual"); }
+                _currentView = null;
+            }
+
+            // Dispose all history
+            while (_history.Count > 0)
+            {
+                var old = _history.Pop();
+                _contentPanel.Controls.Remove(old);
+                try { old.Dispose(); }
+                catch (Exception ex) { ErrorHelper.LogError(ex, "Error al liberar vista del historial"); }
+            }
+
+            ShowView(view);
+            Navigated?.Invoke(title);
+        }
+
         private void ShowView(UserControl view)
         {
             view.Dock = DockStyle.Fill;

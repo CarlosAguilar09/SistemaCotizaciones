@@ -25,6 +25,13 @@ namespace SistemaCotizaciones.Repositories
             db.SaveChanges();
         }
 
+        public void AddRange(List<Cliente> clientes)
+        {
+            using var db = new AppDbContext();
+            db.Clientes.AddRange(clientes);
+            db.SaveChanges();
+        }
+
         public void Update(Cliente cliente)
         {
             using var db = new AppDbContext();

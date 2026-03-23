@@ -33,6 +33,13 @@ namespace SistemaCotizaciones.Repositories
             db.SaveChanges();
         }
 
+        public void AddRange(List<Material> materials)
+        {
+            using var db = new AppDbContext();
+            db.Materials.AddRange(materials);
+            db.SaveChanges();
+        }
+
         public void Update(Material material)
         {
             using var db = new AppDbContext();

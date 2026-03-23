@@ -227,6 +227,8 @@ namespace SistemaCotizaciones.Views
                 _navigator.NavigateTo(new QuoteListView(_navigator), "Cotizaciones"));
             AddNavButton("📐", "Estándares", () =>
                 _navigator.NavigateTo(new AreaPresetListView(_navigator), "Estándares de Precio"));
+            AddNavButton("📥", "Importar/Exportar", () =>
+                _navigator.NavigateTo(new ImportExportView(_navigator), "Importar y Exportar Datos"));
 
             section.Controls.Add(_navFlow);
             section.Controls.Add(lblHeading);
