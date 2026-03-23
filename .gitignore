@@ -372,3 +372,6 @@ appsettings.Production.json
 *.db
 *.sqlite
 *.sqlite3
+
+# Velopack local build output
+releases/

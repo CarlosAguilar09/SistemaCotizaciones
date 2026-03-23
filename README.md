@@ -26,6 +26,7 @@ A desktop quotation management system built for **CUBO Signs**, a signage and ad
 | Database (Prod) | PostgreSQL via [Neon](https://neon.tech) (free tier) |
 | ORM | Entity Framework Core 9.x |
 | PDF | PdfSharp / MigraDoc Standard |
+| Distribution | [Velopack](https://velopack.io) (auto-updates via GitHub Releases) |
 
 ## Project Structure
 
@@ -142,6 +143,45 @@ dotnet ef database update
 ```bash
 dotnet publish -c Release
 ```
+
+## Distribution & Releases
+
+The app uses **Velopack** for professional installer packaging and automatic updates, with **GitHub Actions** automating the build pipeline.
+
+### How It Works
+
+1. Developer pushes a version tag (e.g., `v1.2.0`)
+2. GitHub Actions builds the app and packages it with Velopack
+3. A GitHub Release is created with `SistemaCotizaciones-Setup.exe` attached
+4. Users who already have the app installed receive updates automatically on next launch
+
+### Creating a New Release
+
+```bash
+# 1. Update the version in SistemaCotizaciones.csproj
+#    <Version>1.2.0</Version>
+
+# 2. Commit and tag
+git add -A && git commit -m "release: v1.2.0"
+git tag v1.2.0
+git push && git push --tags
+
+# 3. GitHub Actions handles the rest — check the Actions tab for progress
+```
+
+### First-Time User Install
+
+1. Go to the [Releases page](https://github.com/CarlosAguilar09/SistemaCotizaciones/releases)
+2. Download `SistemaCotizaciones-Setup.exe` from the latest release
+3. Run the installer — the app will be added to Start Menu, desktop, and Add/Remove Programs
+4. No administrator rights or .NET runtime installation required
+
+### Automatic Updates
+
+- The app checks for new versions on GitHub Releases every time it starts
+- Updates download silently in the background
+- The new version is applied automatically on the next app restart
+- No user action required
 
 ## License
 

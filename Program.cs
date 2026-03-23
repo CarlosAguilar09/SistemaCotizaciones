@@ -4,6 +4,8 @@ using Microsoft.Extensions.Configuration;
 using SistemaCotizaciones.Data;
 using SistemaCotizaciones.Helpers;
 using SistemaCotizaciones.Models;
+using Velopack;
+using Velopack.Sources;
 
 namespace SistemaCotizaciones
 {
@@ -17,6 +19,9 @@ namespace SistemaCotizaciones
         [STAThread]
         static void Main()
         {
+            // Velopack lifecycle hooks — must be first (handles install/uninstall/update events)
+            VelopackApp.Build().Run();
+
             // Required by PdfSharp on .NET 5+ for encoding 1252
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
@@ -50,8 +55,40 @@ namespace SistemaCotizaciones
                 return;
             }
 
+            // Check for updates in the background (non-blocking)
+            CheckForUpdates();
+
             ApplicationConfiguration.Initialize();
             Application.Run(new MainForm());
+        }
+
+        private static void CheckForUpdates()
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var source = new GithubSource(
+                        "https://github.com/CarlosAguilar09/SistemaCotizaciones",
+                        null,
+                        false);
+                    var mgr = new UpdateManager(source);
+
+                    if (!mgr.IsInstalled)
+                        return; // skip update check when running in development
+
+                    var newVersion = await mgr.CheckForUpdatesAsync();
+                    if (newVersion != null)
+                    {
+                        await mgr.DownloadUpdatesAsync(newVersion);
+                        // Update will be applied automatically on next restart
+                    }
+                }
+                catch
+                {
+                    // Update check failures are non-critical — silently ignore
+                }
+            });
         }
 
         private static void LoadConfiguration()
