@@ -8,9 +8,16 @@ You are working on **SistemaCotizaciones**, a C# WinForms desktop app for CUBO S
 
 1. **Architecture is non-negotiable:** `Views → Services → Repositories → Data`. Views must NEVER reference `Repositories` directly.
 2. **Build verification:** Always run `dotnet build` after making changes. This is a WinForms app with no test suite — the build is your primary validation.
-3. **No migrations:** The project uses `Database.EnsureCreated()`. Schema changes require updating `AppDbContext.OnModelCreating()` and model classes. The DB is recreated on startup during development.
+3. **Dual database:** Development uses SQLite (`EnsureCreated()`), Production uses PostgreSQL/Neon (`Database.Migrate()`). Schema changes require updating both `AppDbContext.OnModelCreating()` and creating a new EF Core migration.
 4. **No Designer files for Views:** All view controls are created programmatically in code. Only `MainForm` uses the Designer.
 5. **String discriminators over enums:** Type fields (`Product.Type`, `QuoteItem.PricingType`) are plain strings, not C# enums.
+
+## Database & Environments
+
+- **Development (default):** Local SQLite at `%LOCALAPPDATA%\CUBOSigns\SistemaCotizaciones\cotizaciones.db`. DB is deleted and recreated on every startup with seed data.
+- **Production:** Neon PostgreSQL (free tier). Uses EF Core migrations. Set `DOTNET_ENVIRONMENT=Production` and `DATABASE_URL` env var.
+- **AppDbContext** uses a static `Configure()` method set at startup. Repositories continue using `new AppDbContext()`.
+- **Migrations** target PostgreSQL only. Generate with: `$env:DATABASE_URL = "..."; dotnet ef migrations add <Name>`
 
 ## Before Making Changes
 
@@ -21,6 +28,7 @@ You are working on **SistemaCotizaciones**, a C# WinForms desktop app for CUBO S
 ## After Making Changes
 
 - Run `dotnet build` and fix all errors and warnings.
+- If models changed: create a new EF Core migration (`dotnet ef migrations add <Name>` with `DATABASE_URL` set).
 - Verify no `using SistemaCotizaciones.Repositories;` was added to any View file.
 - Verify new UI text is in Spanish.
 
@@ -43,3 +51,4 @@ You are working on **SistemaCotizaciones**, a C# WinForms desktop app for CUBO S
 - **EF Core version:** Must use 9.x. Version 10.x requires .NET 10 which this project doesn't target.
 - **PdfSharp color ambiguity:** Use `using MigraDocColor = MigraDoc.DocumentObjectModel.Color;` alias in any file that imports both `System.Drawing` and MigraDoc.
 - **Repository context lifetime:** Each repository method creates its own `using var db = new AppDbContext()`. Don't share contexts across methods.
+- **Neon cold starts:** Production PostgreSQL (Neon free tier) scales to zero after 5 min of inactivity. `EnableRetryOnFailure()` is configured in `AppDbContext` to handle this. Connection `Timeout=30` allows time for wake-up.

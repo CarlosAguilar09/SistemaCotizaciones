@@ -1,4 +1,6 @@
 using System.Text;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using SistemaCotizaciones.Data;
 using SistemaCotizaciones.Helpers;
 using SistemaCotizaciones.Models;
@@ -7,6 +9,8 @@ namespace SistemaCotizaciones
 {
     internal static class Program
     {
+        private static string _environment = "Development";
+
         /// <summary>
         ///  The main entry point for the application.
         /// </summary>
@@ -36,6 +40,7 @@ namespace SistemaCotizaciones
 
             try
             {
+                LoadConfiguration();
                 InitializeDatabase();
             }
             catch (Exception ex)
@@ -49,9 +54,61 @@ namespace SistemaCotizaciones
             Application.Run(new MainForm());
         }
 
+        private static void LoadConfiguration()
+        {
+            var basePath = AppContext.BaseDirectory;
+
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(basePath)
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+                .AddJsonFile($"appsettings.{_environment}.json", optional: true, reloadOnChange: false)
+                .AddEnvironmentVariables()
+                .Build();
+
+            // Environment can be overridden via DOTNET_ENVIRONMENT env var or appsettings
+            _environment = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")
+                ?? configuration["Environment"]
+                ?? "Development";
+
+            // Reload with correct environment file if it changed
+            configuration = new ConfigurationBuilder()
+                .SetBasePath(basePath)
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+                .AddJsonFile($"appsettings.{_environment}.json", optional: true, reloadOnChange: false)
+                .AddEnvironmentVariables()
+                .Build();
+
+            // DATABASE_URL env var takes highest priority (for production secrets)
+            var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
+                ?? configuration.GetConnectionString("DefaultConnection")
+                ?? "";
+
+            if (_environment == "Production" && !string.IsNullOrEmpty(connectionString))
+            {
+                AppDbContext.Configure("PostgreSQL", connectionString);
+            }
+            else
+            {
+                var sqlitePath = AppDbContext.GetDefaultSqlitePath();
+                AppDbContext.Configure("Sqlite", $"Data Source={sqlitePath}");
+            }
+        }
+
         private static void InitializeDatabase()
         {
-            var dbPath = GetDatabasePath();
+            if (_environment == "Production")
+            {
+                InitializeProductionDatabase();
+            }
+            else
+            {
+                InitializeDevelopmentDatabase();
+            }
+        }
+
+        private static void InitializeDevelopmentDatabase()
+        {
+            var dbPath = AppDbContext.GetDefaultSqlitePath();
 
             // Delete existing DB to apply schema changes during development
             if (File.Exists(dbPath))
@@ -62,12 +119,11 @@ namespace SistemaCotizaciones
             SeedData(db);
         }
 
-        private static string GetDatabasePath()
+        private static void InitializeProductionDatabase()
         {
-            var appDataFolder = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "CUBOSigns", "SistemaCotizaciones");
-            return Path.Combine(appDataFolder, "cotizaciones.db");
+            using var db = new AppDbContext();
+            db.Database.Migrate();
+            SeedData(db);
         }
 
         private static void SeedData(AppDbContext db)

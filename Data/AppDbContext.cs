@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.Extensions.Configuration;
 using SistemaCotizaciones.Models;
 
 namespace SistemaCotizaciones.Data
@@ -15,20 +17,54 @@ namespace SistemaCotizaciones.Data
         public DbSet<AreaPricingPreset> AreaPricingPresets { get; set; }
         public DbSet<ThicknessTier> ThicknessTiers { get; set; }
 
-        private static readonly string DbPath = GetDatabasePath();
+        private static string _provider = "Sqlite";
+        private static string _connectionString = $"Data Source={GetDefaultSqlitePath()}";
 
-        private static string GetDatabasePath()
+        /// <summary>
+        /// Configures the database provider and connection string for all AppDbContext instances.
+        /// Must be called once at startup before any database access.
+        /// </summary>
+        public static void Configure(string provider, string connectionString)
+        {
+            _provider = provider;
+            _connectionString = connectionString;
+        }
+
+        public static bool IsPostgreSql => _provider == "PostgreSQL";
+
+        public AppDbContext() { }
+
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            if (optionsBuilder.IsConfigured)
+                return;
+
+            if (_provider == "PostgreSQL")
+            {
+                optionsBuilder.UseNpgsql(_connectionString, npgsqlOptions =>
+                {
+                    // Retry on transient failures (handles Neon cold starts after scale-to-zero)
+                    npgsqlOptions.EnableRetryOnFailure(
+                        maxRetryCount: 3,
+                        maxRetryDelay: TimeSpan.FromSeconds(10),
+                        errorCodesToAdd: null);
+                });
+            }
+            else
+            {
+                optionsBuilder.UseSqlite(_connectionString);
+            }
+        }
+
+        public static string GetDefaultSqlitePath()
         {
             var appDataFolder = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "CUBOSigns", "SistemaCotizaciones");
             Directory.CreateDirectory(appDataFolder);
             return Path.Combine(appDataFolder, "cotizaciones.db");
-        }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            optionsBuilder.UseSqlite($"Data Source={DbPath}");
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -92,6 +128,41 @@ namespace SistemaCotizaciones.Data
             modelBuilder.Entity<Quote>()
                 .Property(q => q.IvaRate)
                 .HasDefaultValue(8m);
+        }
+    }
+
+    /// <summary>
+    /// Design-time factory for EF Core CLI tools (dotnet ef migrations, etc.).
+    /// Reads connection string from appsettings or DATABASE_URL env var.
+    /// </summary>
+    public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
+    {
+        public AppDbContext CreateDbContext(string[] args)
+        {
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: true)
+                .AddJsonFile("appsettings.Production.json", optional: true)
+                .AddEnvironmentVariables()
+                .Build();
+
+            var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
+                ?? configuration.GetConnectionString("DefaultConnection")
+                ?? "";
+
+            var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
+
+            if (!string.IsNullOrEmpty(connectionString) && connectionString.Contains("Host="))
+            {
+                optionsBuilder.UseNpgsql(connectionString);
+            }
+            else
+            {
+                var sqlitePath = AppDbContext.GetDefaultSqlitePath();
+                optionsBuilder.UseSqlite($"Data Source={sqlitePath}");
+            }
+
+            return new AppDbContext(optionsBuilder.Options);
         }
     }
 }

@@ -361,3 +361,14 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Neon PostgreSQL production secrets
+appsettings.Production.json
+
+# Neon CLI context file
+.neon
+
+# SQLite database files
+*.db
+*.sqlite
+*.sqlite3
