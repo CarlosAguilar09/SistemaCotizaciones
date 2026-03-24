@@ -2,7 +2,7 @@ name: Release
 
 on:
   push:
-    tags: ['v*']
+    branches: [master]
 
 permissions:
   contents: write
@@ -12,10 +12,35 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
+
+      - name: Determine next version
+        id: version
+        shell: bash
+        run: |
+          # Get the latest version tag (sorted by version), default to v0.0.0
+          LATEST_TAG=$(git tag --list 'v*' --sort=-version:refname | head -n 1)
+          if [ -z "$LATEST_TAG" ]; then
+            LATEST_TAG="v0.0.0"
+          fi
+          echo "Latest tag: $LATEST_TAG"
+
+          # Strip 'v' prefix and split into major.minor.patch
+          VERSION="${LATEST_TAG#v}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+
+          # Increment patch
+          PATCH=$((PATCH + 1))
+          NEXT_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          echo "Next version: $NEXT_VERSION"
+
+          echo "VERSION=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
+          echo "TAG=v$NEXT_VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Install Velopack CLI
         run: dotnet tool install -g vpk
@@ -32,16 +57,19 @@ jobs:
       - name: Publish application
         run: dotnet publish -c Release -r win-x64 --self-contained -o ./publish
 
-      - name: Extract version from tag
-        id: version
-        shell: bash
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-
       - name: Package with Velopack
         run: vpk pack --packId SistemaCotizaciones --packVersion ${{ steps.version.outputs.VERSION }} --packDir ./publish --mainExe SistemaCotizaciones.exe --outputDir ./releases
+
+      - name: Create version tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag ${{ steps.version.outputs.TAG }}
+          git push origin ${{ steps.version.outputs.TAG }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.version.outputs.TAG }}
           generate_release_notes: true
           files: ./releases/*
