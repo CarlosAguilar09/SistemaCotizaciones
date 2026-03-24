@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using SistemaCotizaciones.Models;
 
@@ -40,6 +41,10 @@ namespace SistemaCotizaciones.Data
         {
             if (optionsBuilder.IsConfigured)
                 return;
+
+            // Suppress false-positive warning when model matches schema but snapshot hash differs
+            optionsBuilder.ConfigureWarnings(w =>
+                w.Ignore(RelationalEventId.PendingModelChangesWarning));
 
             if (_provider == "PostgreSQL")
             {

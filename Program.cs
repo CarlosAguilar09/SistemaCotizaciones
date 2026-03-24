@@ -144,12 +144,67 @@ namespace SistemaCotizaciones
 
             if (_environment == "Production" && !string.IsNullOrEmpty(connectionString))
             {
+                // Convert PostgreSQL URI format to ADO.NET format if needed
+                // (Npgsql's connection string builder can't parse postgresql:// URIs)
+                connectionString = ConvertToAdoNetConnectionString(connectionString);
                 AppDbContext.Configure("PostgreSQL", connectionString);
             }
             else
             {
                 var sqlitePath = AppDbContext.GetDefaultSqlitePath();
                 AppDbContext.Configure("Sqlite", $"Data Source={sqlitePath}");
+            }
+        }
+
+        /// <summary>
+        /// Converts a PostgreSQL URI (postgresql://user:pass@host/db?params) to ADO.NET format.
+        /// Npgsql's connection string builder only accepts key=value format.
+        /// </summary>
+        private static string ConvertToAdoNetConnectionString(string connectionString)
+        {
+            if (!connectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase) &&
+                !connectionString.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase))
+                return connectionString;
+
+            try
+            {
+                var uri = new Uri(connectionString);
+                var userInfo = uri.UserInfo.Split(':');
+                var username = Uri.UnescapeDataString(userInfo[0]);
+                var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : "";
+                var database = uri.AbsolutePath.TrimStart('/');
+                var host = uri.Host;
+                var port = uri.Port > 0 ? uri.Port : 5432;
+
+                var adoNet = $"Host={host};Port={port};Database={database};Username={username};Password={password}";
+
+                // Parse query parameters (e.g., sslmode=require)
+                var query = uri.Query.TrimStart('?');
+                if (!string.IsNullOrEmpty(query))
+                {
+                    foreach (var param in query.Split('&'))
+                    {
+                        var parts = param.Split('=', 2);
+                        if (parts.Length != 2) continue;
+                        var key = parts[0].ToLower() switch
+                        {
+                            "sslmode" => "SSL Mode",
+                            "channel_binding" => "Channel Binding",
+                            _ => parts[0]
+                        };
+                        adoNet += $";{key}={parts[1]}";
+                    }
+                }
+
+                // Add sensible defaults for Neon
+                if (!adoNet.Contains("Timeout=", StringComparison.OrdinalIgnoreCase))
+                    adoNet += ";Timeout=30;Command Timeout=30";
+
+                return adoNet;
+            }
+            catch
+            {
+                return connectionString; // Return as-is if parsing fails
             }
         }
 
