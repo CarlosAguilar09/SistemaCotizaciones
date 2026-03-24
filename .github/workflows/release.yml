@@ -50,6 +50,12 @@ jobs:
           @{
             Environment = "Production"
             ConnectionStrings = @{
+              DefaultConnection = ""
+            }
+          } | ConvertTo-Json | Set-Content -Path appsettings.json
+
+          @{
+            ConnectionStrings = @{
               DefaultConnection = "${{ secrets.DATABASE_URL }}"
             }
           } | ConvertTo-Json | Set-Content -Path appsettings.Production.json
