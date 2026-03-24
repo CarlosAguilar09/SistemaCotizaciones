@@ -27,6 +27,9 @@ namespace SistemaCotizaciones
             // Velopack lifecycle hooks — must be first (handles install/uninstall/update events)
             VelopackApp.Build().Run();
 
+            // Allow Npgsql to accept DateTime.Now (Kind=Local) for timestamp with time zone columns
+            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
             // Required by PdfSharp on .NET 5+ for encoding 1252
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
