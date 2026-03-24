@@ -48,13 +48,6 @@ jobs:
       - name: Generate production config
         run: |
           @{
-            Environment = "Production"
-            ConnectionStrings = @{
-              DefaultConnection = ""
-            }
-          } | ConvertTo-Json | Set-Content -Path appsettings.json
-
-          @{
             ConnectionStrings = @{
               DefaultConnection = "${{ secrets.DATABASE_URL }}"
             }

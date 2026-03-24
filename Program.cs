@@ -14,6 +14,11 @@ namespace SistemaCotizaciones
         private static string _environment = "Development";
 
         /// <summary>
+        /// Current environment name, exposed so MainForm can display it.
+        /// </summary>
+        public static string Environment => _environment;
+
+        /// <summary>
         ///  The main entry point for the application.
         /// </summary>
         [STAThread]
@@ -95,6 +100,33 @@ namespace SistemaCotizaciones
         {
             var basePath = AppContext.BaseDirectory;
 
+            // 1. Explicit env var always wins
+            var envVar = System.Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT");
+            if (!string.IsNullOrEmpty(envVar))
+            {
+                _environment = envVar;
+            }
+            else
+            {
+                // 2. Auto-detect: if appsettings.Production.json has a real connection string,
+                //    the app was published by CI → use Production. Otherwise → Development.
+                var prodConfigPath = Path.Combine(basePath, "appsettings.Production.json");
+                if (File.Exists(prodConfigPath))
+                {
+                    try
+                    {
+                        var prodConfig = new ConfigurationBuilder()
+                            .AddJsonFile(prodConfigPath, optional: true)
+                            .Build();
+                        var connStr = prodConfig.GetConnectionString("DefaultConnection");
+                        if (!string.IsNullOrEmpty(connStr))
+                            _environment = "Production";
+                    }
+                    catch { /* Corrupted file → stay in Development */ }
+                }
+            }
+
+            // Load full configuration with the resolved environment
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(basePath)
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
@@ -102,21 +134,8 @@ namespace SistemaCotizaciones
                 .AddEnvironmentVariables()
                 .Build();
 
-            // Environment can be overridden via DOTNET_ENVIRONMENT env var or appsettings
-            _environment = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")
-                ?? configuration["Environment"]
-                ?? "Development";
-
-            // Reload with correct environment file if it changed
-            configuration = new ConfigurationBuilder()
-                .SetBasePath(basePath)
-                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
-                .AddJsonFile($"appsettings.{_environment}.json", optional: true, reloadOnChange: false)
-                .AddEnvironmentVariables()
-                .Build();
-
             // DATABASE_URL env var takes highest priority (for production secrets)
-            var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
+            var connectionString = System.Environment.GetEnvironmentVariable("DATABASE_URL")
                 ?? configuration.GetConnectionString("DefaultConnection")
                 ?? "";
 

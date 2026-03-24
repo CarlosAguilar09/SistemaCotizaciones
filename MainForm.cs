@@ -28,6 +28,23 @@ namespace SistemaCotizaciones
             // Get reference to the header label for dynamic updates
             _headerLabel = (Label)headerPanel.Controls[0];
 
+            // Add environment badge (visible indicator of DEV vs PROD)
+            if (Program.Environment != "Production")
+            {
+                var envBadge = new Label
+                {
+                    Text = $" {Program.Environment.ToUpper()} ",
+                    Font = new Font("Segoe UI", 8F, FontStyle.Bold),
+                    ForeColor = Color.White,
+                    BackColor = Color.FromArgb(214, 48, 49), // Danger red
+                    AutoSize = true,
+                    Dock = DockStyle.Right,
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    Padding = new Padding(6, 0, 6, 0)
+                };
+                headerPanel.Controls.Add(envBadge);
+            }
+
             // Setup navigator
             _navigator = new Navigator(pnlContent);
             _navigator.Navigated += title =>
