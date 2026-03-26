@@ -37,6 +37,12 @@ namespace SistemaCotizaciones
             Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
             Application.ThreadException += (sender, e) =>
             {
+                // Enhanced diagnostics for cross-thread issues
+                var threadInfo = $"[ThreadException] ThreadId={System.Threading.Thread.CurrentThread.ManagedThreadId}, "
+                    + $"IsBackground={System.Threading.Thread.CurrentThread.IsBackground}, "
+                    + $"IsThreadPoolThread={System.Threading.Thread.CurrentThread.IsThreadPoolThread}";
+                ErrorHelper.LogError(e.Exception, threadInfo);
+
                 ErrorHelper.ShowError(
                     "Ocurrió un error inesperado. La aplicación intentará continuar.",
                     e.Exception);
