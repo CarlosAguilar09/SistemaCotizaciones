@@ -36,7 +36,9 @@ namespace SistemaCotizaciones.Views
             _navigator = navigator;
             Tag = "Configuración";
             InitializeControls();
-            LoadData();
+            // Defer data loading until the control is fully parented and handles are created,
+            // preventing cross-thread exceptions during layout.
+            Load += (s, e) => LoadData();
         }
 
         #region UI Construction
@@ -65,8 +67,19 @@ namespace SistemaCotizaciones.Views
             // Keep content centered-ish when parent resizes
             scrollPanel.Resize += (s, e) =>
             {
-                var maxW = Math.Min(scrollPanel.ClientSize.Width - AppTheme.SpaceXL * 2, 700);
-                contentPanel.Width = Math.Max(400, maxW);
+                if (scrollPanel.IsDisposed || !scrollPanel.IsHandleCreated)
+                    return;
+
+                void DoResize()
+                {
+                    var maxW = Math.Min(scrollPanel.ClientSize.Width - AppTheme.SpaceXL * 2, 700);
+                    contentPanel.Width = Math.Max(400, maxW);
+                }
+
+                if (scrollPanel.InvokeRequired)
+                    scrollPanel.BeginInvoke(DoResize);
+                else
+                    DoResize();
             };
 
             contentPanel.Controls.Add(BuildCompanyInfoSection());
