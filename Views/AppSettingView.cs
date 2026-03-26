@@ -31,73 +31,19 @@ namespace SistemaCotizaciones.Views
         private ListBox lstTerms = null!;
         private List<string> _terms = new();
 
-        // Diagnostic: capture the UI thread ID at construction time
-        private readonly int _constructorThreadId;
-
         public AppSettingView(Navigator navigator)
         {
-            _constructorThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
-            DiagLog($"Constructor START — ThreadId={_constructorThreadId}, IsHandleCreated={IsHandleCreated}");
-
             _navigator = navigator;
             Tag = "Configuración";
             InitializeControls();
-
-            DiagLog($"Constructor END — about to attach Load event, IsHandleCreated={IsHandleCreated}");
-            Load += (s, e) =>
-            {
-                DiagLog($"Load event fired — ThreadId={System.Threading.Thread.CurrentThread.ManagedThreadId}, IsHandleCreated={IsHandleCreated}");
-                LoadData();
-            };
-        }
-
-        /// <summary>
-        /// Diagnostic logger — writes to the error.log with [DIAG] prefix so entries are easy to find.
-        /// Remove after the cross-thread bug is resolved.
-        /// </summary>
-        private static void DiagLog(string message)
-        {
-            try
-            {
-                var dir = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "CUBOSigns", "SistemaCotizaciones");
-                Directory.CreateDirectory(dir);
-                var line = $"[{DateTime.Now:HH:mm:ss.fff}] [DIAG] [Thread {System.Threading.Thread.CurrentThread.ManagedThreadId}] {message}\n";
-                File.AppendAllText(Path.Combine(dir, "error.log"), line);
-            }
-            catch { /* diagnostic logging must never throw */ }
-        }
-
-        /// <summary>
-        /// Safely sets a control property with full diagnostic logging.
-        /// If a cross-thread error occurs, it logs the exact control name, property, thread info,
-        /// and handle status — then re-throws so the global handler still fires.
-        /// </summary>
-        private void SafeSet(Action action, string controlName, string propertyName)
-        {
-            try
-            {
-                action();
-            }
-            catch (InvalidOperationException ex) when (ex.Message.Contains("Cross-thread") || ex.Message.Contains("cross-thread") || ex.Message.Contains("thread"))
-            {
-                var msg = $"CROSS-THREAD on [{controlName}.{propertyName}]\n"
-                    + $"  Constructor thread: {_constructorThreadId}\n"
-                    + $"  Current thread:     {System.Threading.Thread.CurrentThread.ManagedThreadId}\n"
-                    + $"  IsHandleCreated:    {IsHandleCreated}\n"
-                    + $"  InvokeRequired:     {(IsHandleCreated ? InvokeRequired.ToString() : "N/A")}\n"
-                    + $"  Stack: {ex.StackTrace}";
-                DiagLog(msg);
-                throw; // let the global handler show it too
-            }
+            // Defer data loading until the control is fully parented and handles are created
+            Load += (s, e) => LoadData();
         }
 
         #region UI Construction
 
         private void InitializeControls()
         {
-            DiagLog("InitializeControls START");
             AppTheme.ApplyTo(this);
 
             var scrollPanel = new Panel
@@ -107,47 +53,37 @@ namespace SistemaCotizaciones.Views
                 Padding = new Padding(AppTheme.SpaceXL)
             };
 
-            var contentPanel = new FlowLayoutPanel
+            var contentTable = new TableLayoutPanel
             {
                 Dock = DockStyle.Top,
-                FlowDirection = FlowDirection.TopDown,
-                WrapContents = false,
                 AutoSize = true,
                 AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                Width = 620,
-                Padding = Padding.Empty
+                ColumnCount = 1,
+                RowCount = 4,
+                Padding = Padding.Empty,
+                Margin = Padding.Empty,
+                BackColor = Color.Transparent,
+                MaximumSize = new Size(700, 0),
+                MinimumSize = new Size(400, 0)
             };
-            // Keep content centered-ish when parent resizes
+            contentTable.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+
+            contentTable.Controls.Add(BuildCompanyInfoSection(), 0, 0);
+            contentTable.Controls.Add(BuildLogoSection(), 0, 1);
+            contentTable.Controls.Add(BuildQuoteDefaultsSection(), 0, 2);
+            contentTable.Controls.Add(BuildTermsSection(), 0, 3);
+
+            // Center the contentTable horizontally
+            contentTable.Anchor = AnchorStyles.Top;
+            contentTable.Left = (scrollPanel.ClientSize.Width - contentTable.Width) / 2;
             scrollPanel.Resize += (s, e) =>
             {
-                var threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
-                if (threadId != _constructorThreadId)
-                    DiagLog($"⚠ Resize fired on WRONG thread! CurrentThread={threadId}, Expected={_constructorThreadId}");
-
                 if (scrollPanel.IsDisposed || !scrollPanel.IsHandleCreated)
                     return;
-
-                void DoResize()
-                {
-                    var maxW = Math.Min(scrollPanel.ClientSize.Width - AppTheme.SpaceXL * 2, 700);
-                    contentPanel.Width = Math.Max(400, maxW);
-                }
-
-                if (scrollPanel.InvokeRequired)
-                {
-                    DiagLog($"Resize: InvokeRequired=true, marshaling to UI thread");
-                    scrollPanel.BeginInvoke(DoResize);
-                }
-                else
-                    DoResize();
+                contentTable.Left = (scrollPanel.ClientSize.Width - contentTable.Width) / 2;
             };
 
-            contentPanel.Controls.Add(BuildCompanyInfoSection());
-            contentPanel.Controls.Add(BuildLogoSection());
-            contentPanel.Controls.Add(BuildQuoteDefaultsSection());
-            contentPanel.Controls.Add(BuildTermsSection());
-
-            scrollPanel.Controls.Add(contentPanel);
+            scrollPanel.Controls.Add(contentTable);
 
             // Button bar
             var (buttonBar, leftFlow, rightFlow) = AppTheme.CreateButtonBar();
@@ -164,7 +100,6 @@ namespace SistemaCotizaciones.Views
 
             Controls.Add(scrollPanel);
             Controls.Add(buttonBar);
-            DiagLog($"InitializeControls END — IsHandleCreated={IsHandleCreated}");
         }
 
         private GroupBox BuildCompanyInfoSection()
@@ -379,59 +314,43 @@ namespace SistemaCotizaciones.Views
 
         private void LoadData()
         {
-            DiagLog($"LoadData START — ThreadId={System.Threading.Thread.CurrentThread.ManagedThreadId}, IsHandleCreated={IsHandleCreated}, InvokeRequired={(IsHandleCreated ? InvokeRequired.ToString() : "N/A")}");
-
             try
             {
-                DiagLog("LoadData: calling _settingService.Get()...");
                 _settings = _settingService.Get();
-                DiagLog($"LoadData: Got settings OK (CompanyName={_settings.CompanyName})");
-
                 _terms = _settingService.GetTerms(_settings);
-                DiagLog($"LoadData: Got {_terms.Count} terms");
 
-                // Company Info — each property set is wrapped for diagnostics
-                SafeSet(() => txtCompanyName.Text = _settings.CompanyName, "txtCompanyName", "Text");
-                SafeSet(() => txtRFC.Text = _settings.RFC ?? "", "txtRFC", "Text");
-                SafeSet(() => txtAddress.Text = _settings.Address ?? "", "txtAddress", "Text");
-                SafeSet(() => txtCity.Text = _settings.City ?? "", "txtCity", "Text");
-                SafeSet(() => txtPhone.Text = _settings.Phone ?? "", "txtPhone", "Text");
-                SafeSet(() => txtEmail.Text = _settings.Email ?? "", "txtEmail", "Text");
-                SafeSet(() => txtWebsite.Text = _settings.Website ?? "", "txtWebsite", "Text");
-                SafeSet(() => txtSocialMedia.Text = _settings.SocialMedia ?? "", "txtSocialMedia", "Text");
-                DiagLog("LoadData: Company info fields set OK");
+                txtCompanyName.Text = _settings.CompanyName;
+                txtRFC.Text = _settings.RFC ?? "";
+                txtAddress.Text = _settings.Address ?? "";
+                txtCity.Text = _settings.City ?? "";
+                txtPhone.Text = _settings.Phone ?? "";
+                txtEmail.Text = _settings.Email ?? "";
+                txtWebsite.Text = _settings.Website ?? "";
+                txtSocialMedia.Text = _settings.SocialMedia ?? "";
 
-                // Logo
-                DiagLog("LoadData: calling LoadLogoPreview...");
                 LoadLogoPreview();
-                DiagLog("LoadData: Logo loaded OK");
 
-                // Quote Defaults
-                DiagLog($"LoadData: Setting NUDs — IVA={_settings.DefaultIvaRate}, Days={_settings.QuoteValidityDays}, Advance={_settings.DefaultAdvancePercent}");
-                SafeSet(() => nudDefaultIva.Value = _settings.DefaultIvaRate, "nudDefaultIva", "Value");
-                SafeSet(() => nudValidityDays.Value = _settings.QuoteValidityDays, "nudValidityDays", "Value");
-                SafeSet(() => nudAdvancePercent.Value = _settings.DefaultAdvancePercent, "nudAdvancePercent", "Value");
-                DiagLog("LoadData: NUDs set OK");
+                nudDefaultIva.Value = _settings.DefaultIvaRate;
+                nudValidityDays.Value = _settings.QuoteValidityDays;
+                nudAdvancePercent.Value = _settings.DefaultAdvancePercent;
 
-                // Terms
                 RefreshTermsList();
-                DiagLog("LoadData END — all OK");
             }
             catch (Exception ex)
             {
-                DiagLog($"LoadData EXCEPTION: {ex.GetType().Name}: {ex.Message}\nStack: {ex.StackTrace}");
                 ErrorHelper.ShowError("No se pudo cargar la configuración.", ex);
             }
         }
 
         private void LoadLogoPreview()
         {
-            DiagLog($"LoadLogoPreview START — ThreadId={System.Threading.Thread.CurrentThread.ManagedThreadId}");
-            SafeSet(() => { picLogo.Image?.Dispose(); picLogo.Image = null; }, "picLogo", "Image (clear)");
-            SafeSet(() => lblLogoPath.Text = "", "lblLogoPath", "Text (clear)");
+            // DiagLog($"LoadLogoPreview START — ThreadId={System.Threading.Thread.CurrentThread.ManagedThreadId}");
+            picLogo.Image?.Dispose();
+            picLogo.Image = null;
+            lblLogoPath.Text = "";
 
             var logoPath = _settings.LogoPath;
-            DiagLog($"LoadLogoPreview: LogoPath={logoPath ?? "(null)"}");
+            // DiagLog($"LoadLogoPreview: LogoPath={logoPath ?? "(null)"}");
 
             if (!string.IsNullOrEmpty(logoPath) && File.Exists(logoPath))
             {
@@ -441,14 +360,14 @@ namespace SistemaCotizaciones.Views
                     var ms = new MemoryStream();
                     fileStream.CopyTo(ms);
                     ms.Position = 0;
-                    SafeSet(() => picLogo.Image = Image.FromStream(ms), "picLogo", "Image (custom)");
-                    SafeSet(() => lblLogoPath.Text = Path.GetFileName(logoPath), "lblLogoPath", "Text (custom)");
-                    DiagLog("LoadLogoPreview: custom logo loaded OK");
+                    picLogo.Image = Image.FromStream(ms);
+                    lblLogoPath.Text = Path.GetFileName(logoPath);
+                    // DiagLog("LoadLogoPreview: custom logo loaded OK");
                     return;
                 }
                 catch (Exception ex)
                 {
-                    DiagLog($"LoadLogoPreview: custom logo FAILED — {ex.GetType().Name}: {ex.Message}");
+                    // DiagLog($"LoadLogoPreview: custom logo FAILED — {ex.GetType().Name}: {ex.Message}");
                 }
             }
 
@@ -458,7 +377,7 @@ namespace SistemaCotizaciones.Views
                 var assembly = System.Reflection.Assembly.GetExecutingAssembly();
                 var resourceName = assembly.GetManifestResourceNames()
                     .FirstOrDefault(n => n.EndsWith("logo.png", StringComparison.OrdinalIgnoreCase));
-                DiagLog($"LoadLogoPreview: embedded resource={resourceName ?? "(not found)"}");
+                // DiagLog($"LoadLogoPreview: embedded resource={resourceName ?? "(not found)"}");
                 if (resourceName != null)
                 {
                     using var stream = assembly.GetManifestResourceStream(resourceName);
@@ -467,15 +386,15 @@ namespace SistemaCotizaciones.Views
                         var ms = new MemoryStream();
                         stream.CopyTo(ms);
                         ms.Position = 0;
-                        SafeSet(() => picLogo.Image = Image.FromStream(ms), "picLogo", "Image (embedded)");
+                        picLogo.Image = Image.FromStream(ms);
                     }
                 }
-                SafeSet(() => lblLogoPath.Text = "Logo predeterminado (integrado)", "lblLogoPath", "Text (embedded)");
-                DiagLog("LoadLogoPreview: embedded logo loaded OK");
+                lblLogoPath.Text = "Logo predeterminado (integrado)";
+                // DiagLog("LoadLogoPreview: embedded logo loaded OK");
             }
             catch (Exception ex)
             {
-                DiagLog($"LoadLogoPreview: embedded logo FAILED — {ex.GetType().Name}: {ex.Message}");
+                // DiagLog($"LoadLogoPreview: embedded logo FAILED — {ex.GetType().Name}: {ex.Message}");
             }
         }
 
