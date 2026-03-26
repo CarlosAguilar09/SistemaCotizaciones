@@ -439,13 +439,20 @@ namespace SistemaCotizaciones.Views
             };
             cmbIva.Items.AddRange(new object[] { "Sin IVA", "IVA 8% (Frontera)", "IVA 16% (General)" });
             // Set default IVA from app settings
-            var settings = _settingService.Get();
-            cmbIva.SelectedIndex = settings.DefaultIvaRate switch
+            try
             {
-                8m => 1,
-                16m => 2,
-                _ => 0
-            };
+                var settings = _settingService.Get();
+                cmbIva.SelectedIndex = settings.DefaultIvaRate switch
+                {
+                    8m => 1,
+                    16m => 2,
+                    _ => 0
+                };
+            }
+            catch
+            {
+                cmbIva.SelectedIndex = 1; // Fallback: 8% Frontera
+            }
             cmbIva.SelectedIndexChanged += (s, e) => RecalculateTotal();
 
             leftFlow.Controls.Add(btnRemoveItem);

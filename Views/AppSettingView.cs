@@ -84,6 +84,11 @@ namespace SistemaCotizaciones.Views
             btnSave.Click += BtnSave_Click;
             leftFlow.Controls.Add(btnSave);
 
+            var btnBack = AppTheme.CreateButton("Volver", AppTheme.ButtonWidthMD);
+            AppTheme.StyleSecondaryButton(btnBack);
+            btnBack.Click += (s, e) => _navigator.GoBack();
+            rightFlow.Controls.Add(btnBack);
+
             Controls.Add(scrollPanel);
             Controls.Add(buttonBar);
         }
@@ -300,14 +305,16 @@ namespace SistemaCotizaciones.Views
 
         private void LoadData()
         {
-            _settings = _settingService.Get();
-            _terms = _settingService.GetTerms(_settings);
+            try
+            {
+                _settings = _settingService.Get();
+                _terms = _settingService.GetTerms(_settings);
 
-            // Company Info
-            txtCompanyName.Text = _settings.CompanyName;
-            txtRFC.Text = _settings.RFC ?? "";
-            txtAddress.Text = _settings.Address ?? "";
-            txtCity.Text = _settings.City ?? "";
+                // Company Info
+                txtCompanyName.Text = _settings.CompanyName;
+                txtRFC.Text = _settings.RFC ?? "";
+                txtAddress.Text = _settings.Address ?? "";
+                txtCity.Text = _settings.City ?? "";
             txtPhone.Text = _settings.Phone ?? "";
             txtEmail.Text = _settings.Email ?? "";
             txtWebsite.Text = _settings.Website ?? "";
@@ -323,6 +330,11 @@ namespace SistemaCotizaciones.Views
 
             // Terms
             RefreshTermsList();
+            }
+            catch (Exception ex)
+            {
+                ErrorHelper.ShowError("No se pudo cargar la configuración.", ex);
+            }
         }
 
         private void LoadLogoPreview()
@@ -337,8 +349,12 @@ namespace SistemaCotizaciones.Views
             {
                 try
                 {
-                    using var stream = new FileStream(logoPath, FileMode.Open, FileAccess.Read);
-                    picLogo.Image = Image.FromStream(stream);
+                    // Copy to MemoryStream so the file isn't locked and Image stays valid
+                    using var fileStream = new FileStream(logoPath, FileMode.Open, FileAccess.Read);
+                    var ms = new MemoryStream();
+                    fileStream.CopyTo(ms);
+                    ms.Position = 0;
+                    picLogo.Image = Image.FromStream(ms);
                     lblLogoPath.Text = Path.GetFileName(logoPath);
                     return;
                 }
@@ -355,7 +371,12 @@ namespace SistemaCotizaciones.Views
                 {
                     using var stream = assembly.GetManifestResourceStream(resourceName);
                     if (stream != null)
-                        picLogo.Image = Image.FromStream(stream);
+                    {
+                        var ms = new MemoryStream();
+                        stream.CopyTo(ms);
+                        ms.Position = 0;
+                        picLogo.Image = Image.FromStream(ms);
+                    }
                 }
                 lblLogoPath.Text = "Logo predeterminado (integrado)";
             }
