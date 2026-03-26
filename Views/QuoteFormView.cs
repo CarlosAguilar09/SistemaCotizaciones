@@ -10,6 +10,7 @@ namespace SistemaCotizaciones.Views
         private readonly QuoteService _quoteService = new();
         private readonly QuoteCalculationService _calcService = new();
         private readonly AreaPricingPresetService _presetService = new();
+        private readonly AppSettingService _settingService = new();
 
         private readonly int? _quoteId;
         private readonly List<QuoteItem> _items = new();
@@ -437,7 +438,14 @@ namespace SistemaCotizaciones.Views
                 Margin = new Padding(0, 6, 0, 0)
             };
             cmbIva.Items.AddRange(new object[] { "Sin IVA", "IVA 8% (Frontera)", "IVA 16% (General)" });
-            cmbIva.SelectedIndex = 1; // Default: 8% Frontera
+            // Set default IVA from app settings
+            var settings = _settingService.Get();
+            cmbIva.SelectedIndex = settings.DefaultIvaRate switch
+            {
+                8m => 1,
+                16m => 2,
+                _ => 0
+            };
             cmbIva.SelectedIndexChanged += (s, e) => RecalculateTotal();
 
             leftFlow.Controls.Add(btnRemoveItem);

@@ -253,6 +253,9 @@ namespace SistemaCotizaciones
 
             if (!db.Clientes.Any())
                 SeedClientes(db);
+
+            if (!db.AppSettings.Any())
+                SeedAppSettings(db);
         }
 
         private static void SeedProducts(AppDbContext db)
@@ -538,6 +541,34 @@ namespace SistemaCotizaciones
             };
 
             db.Clientes.AddRange(clientes);
+            db.SaveChanges();
+        }
+
+        private static void SeedAppSettings(AppDbContext db)
+        {
+            var settings = new AppSetting
+            {
+                CompanyName = "CUBO SIGNS",
+                Address = "Av. José Joaquín Fernández de Lizardi #801-2, Esq. Río Mocorito",
+                City = "Mexicali, Baja California, México, 21290",
+                Phone = "686 370 7018",
+                Email = "cubosigns.ventas@gmail.com",
+                SocialMedia = "Instagram: @cubo_signs",
+                DefaultIvaRate = 8m,
+                QuoteValidityDays = 15,
+                DefaultAdvancePercent = 50m,
+                TermsJson = System.Text.Json.JsonSerializer.Serialize(new[]
+                {
+                    "Precios expresados en Moneda Nacional (MXN).",
+                    "Los precios {IVA}.",
+                    "Cotización válida por {VIGENCIA} días a partir de la fecha de emisión.",
+                    "Se requiere un {ANTICIPO}% de anticipo para iniciar la producción.",
+                    "Tiempos de entrega sujetos a confirmación al momento de la orden.",
+                    "Los colores impresos pueden variar ligeramente respecto a los visualizados en pantalla."
+                })
+            };
+
+            db.AppSettings.Add(settings);
             db.SaveChanges();
         }
     }

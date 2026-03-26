@@ -17,6 +17,7 @@ namespace SistemaCotizaciones.Data
         public DbSet<MaterialOption> MaterialOptions { get; set; }
         public DbSet<AreaPricingPreset> AreaPricingPresets { get; set; }
         public DbSet<ThicknessTier> ThicknessTiers { get; set; }
+        public DbSet<AppSetting> AppSettings { get; set; }
 
         private static string _provider = "Sqlite";
         private static string _connectionString = $"Data Source={GetDefaultSqlitePath()}";

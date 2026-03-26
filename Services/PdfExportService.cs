@@ -15,17 +15,24 @@ namespace SistemaCotizaciones.Services
         private static readonly MigraDocColor TextGray = new(100, 100, 100);
         private static readonly MigraDocColor BorderLight = new(206, 214, 224);
 
-        private const int ValidityDays = 15;
         // Letter page (21.59cm) minus 2cm margins each side
         private const double ContentWidth = 17.5;
 
+        private readonly AppSettingService _settingService = new();
+
         public void ExportQuoteToPdf(Quote quote, List<QuoteItem> items, string filePath)
+        {
+            var settings = _settingService.Get();
+            ExportQuoteToPdf(quote, items, filePath, settings);
+        }
+
+        public void ExportQuoteToPdf(Quote quote, List<QuoteItem> items, string filePath, AppSetting settings)
         {
             string? logoTempPath = null;
             try
             {
-                logoTempPath = ExtractLogoToTempFile();
-                var document = CreateDocument(quote, items, logoTempPath);
+                logoTempPath = ResolveLogo(settings);
+                var document = CreateDocument(quote, items, logoTempPath, settings);
 
                 var renderer = new PdfDocumentRenderer(true);
                 renderer.Document = document;
@@ -48,12 +55,12 @@ namespace SistemaCotizaciones.Services
 
         #region Document Setup
 
-        private Document CreateDocument(Quote quote, List<QuoteItem> items, string? logoPath)
+        private Document CreateDocument(Quote quote, List<QuoteItem> items, string? logoPath, AppSetting settings)
         {
             var document = new Document();
             var quoteNumber = FormatQuoteNumber(quote);
             document.Info.Title = $"Cotización {quoteNumber}";
-            document.Info.Author = "CUBO Signs";
+            document.Info.Author = settings.CompanyName;
 
             DefineStyles(document);
 
@@ -64,14 +71,14 @@ namespace SistemaCotizaciones.Services
             section.PageSetup.LeftMargin = Unit.FromCentimeter(2);
             section.PageSetup.RightMargin = Unit.FromCentimeter(2);
 
-            AddCompanyHeader(section, logoPath);
+            AddCompanyHeader(section, logoPath, settings);
             AddAccentSeparator(section);
-            AddQuoteAndClientInfo(section, quote, quoteNumber);
+            AddQuoteAndClientInfo(section, quote, quoteNumber, settings);
             AddItemsTable(section, items);
             AddTotal(section, quote);
             AddNotes(section, quote);
-            AddTermsAndConditions(section, quote);
-            AddFooter(section);
+            AddTermsAndConditions(section, quote, settings);
+            AddFooter(section, settings);
 
             return document;
         }
@@ -141,7 +148,7 @@ namespace SistemaCotizaciones.Services
 
         #region Company Header
 
-        private void AddCompanyHeader(Section section, string? logoPath)
+        private void AddCompanyHeader(Section section, string? logoPath, AppSetting settings)
         {
             var table = section.AddTable();
             table.Borders.Visible = false;
@@ -162,26 +169,59 @@ namespace SistemaCotizaciones.Services
             var infoCell = row.Cells[1];
             infoCell.Format.Alignment = ParagraphAlignment.Right;
 
-            var p = infoCell.AddParagraph("CUBO SIGNS");
+            var p = infoCell.AddParagraph(settings.CompanyName);
             p.Style = "CompanyName";
             p.Format.Alignment = ParagraphAlignment.Right;
 
-            p = infoCell.AddParagraph("Av. José Joaquín Fernández de Lizardi #801-2, Esq. Río Mocorito");
-            p.Style = "CompanyInfo";
-            p.Format.Alignment = ParagraphAlignment.Right;
+            if (!string.IsNullOrWhiteSpace(settings.RFC))
+            {
+                p = infoCell.AddParagraph($"RFC: {settings.RFC}");
+                p.Style = "CompanyInfo";
+                p.Format.Alignment = ParagraphAlignment.Right;
+            }
 
-            p = infoCell.AddParagraph("Mexicali, Baja California, México, 21290");
-            p.Style = "CompanyInfo";
-            p.Format.Alignment = ParagraphAlignment.Right;
+            if (!string.IsNullOrWhiteSpace(settings.Address))
+            {
+                p = infoCell.AddParagraph(settings.Address);
+                p.Style = "CompanyInfo";
+                p.Format.Alignment = ParagraphAlignment.Right;
+            }
 
-            p = infoCell.AddParagraph("Tel: 686 370 7018  |  cubosigns.ventas@gmail.com");
-            p.Style = "CompanyInfo";
-            p.Format.Alignment = ParagraphAlignment.Right;
-            p.Format.SpaceBefore = Unit.FromCentimeter(0.1);
+            if (!string.IsNullOrWhiteSpace(settings.City))
+            {
+                p = infoCell.AddParagraph(settings.City);
+                p.Style = "CompanyInfo";
+                p.Format.Alignment = ParagraphAlignment.Right;
+            }
 
-            p = infoCell.AddParagraph("Instagram: @cubo_signs");
-            p.Style = "CompanyInfo";
-            p.Format.Alignment = ParagraphAlignment.Right;
+            // Build contact line: phone | email
+            var contactParts = new List<string>();
+            if (!string.IsNullOrWhiteSpace(settings.Phone))
+                contactParts.Add($"Tel: {settings.Phone}");
+            if (!string.IsNullOrWhiteSpace(settings.Email))
+                contactParts.Add(settings.Email);
+
+            if (contactParts.Count > 0)
+            {
+                p = infoCell.AddParagraph(string.Join("  |  ", contactParts));
+                p.Style = "CompanyInfo";
+                p.Format.Alignment = ParagraphAlignment.Right;
+                p.Format.SpaceBefore = Unit.FromCentimeter(0.1);
+            }
+
+            // Website and social media
+            var extraParts = new List<string>();
+            if (!string.IsNullOrWhiteSpace(settings.Website))
+                extraParts.Add(settings.Website);
+            if (!string.IsNullOrWhiteSpace(settings.SocialMedia))
+                extraParts.Add(settings.SocialMedia);
+
+            if (extraParts.Count > 0)
+            {
+                p = infoCell.AddParagraph(string.Join("  |  ", extraParts));
+                p.Style = "CompanyInfo";
+                p.Format.Alignment = ParagraphAlignment.Right;
+            }
         }
 
         private void AddAccentSeparator(Section section)
@@ -197,7 +237,7 @@ namespace SistemaCotizaciones.Services
 
         #region Quote & Client Info
 
-        private void AddQuoteAndClientInfo(Section section, Quote quote, string quoteNumber)
+        private void AddQuoteAndClientInfo(Section section, Quote quote, string quoteNumber, AppSetting settings)
         {
             var p = section.AddParagraph("COTIZACIÓN");
             p.Style = "QuoteTitle";
@@ -228,7 +268,7 @@ namespace SistemaCotizaciones.Services
 
             p = row.Cells[0].AddParagraph();
             p.AddFormattedText("Vigencia: ", "Label");
-            p.AddText(quote.Date.AddDays(ValidityDays).ToString("dd/MM/yyyy"));
+            p.AddText(quote.Date.AddDays(settings.QuoteValidityDays).ToString("dd/MM/yyyy"));
 
             if (quote.Cliente != null && !string.IsNullOrWhiteSpace(quote.Cliente.Phone))
             {
@@ -384,7 +424,7 @@ namespace SistemaCotizaciones.Services
 
         #region Terms & Conditions
 
-        private void AddTermsAndConditions(Section section, Quote quote)
+        private void AddTermsAndConditions(Section section, Quote quote, AppSetting settings)
         {
             var p = section.AddParagraph();
             p.Format.SpaceBefore = Unit.FromCentimeter(1);
@@ -396,23 +436,12 @@ namespace SistemaCotizaciones.Services
             p.Style = "TermsTitle";
             p.Format.SpaceAfter = Unit.FromCentimeter(0.2);
 
-            var ivaTermText = quote.IvaRate > 0
-                ? $"Los precios incluyen IVA ({quote.IvaRate:0.##}%)."
-                : "Los precios no incluyen IVA.";
-
-            var terms = new[]
-            {
-                "Precios expresados en Moneda Nacional (MXN).",
-                ivaTermText,
-                $"Cotización válida por {ValidityDays} días a partir de la fecha de emisión.",
-                "Se requiere un 50% de anticipo para iniciar la producción.",
-                "Tiempos de entrega sujetos a confirmación al momento de la orden.",
-                "Los colores impresos pueden variar ligeramente respecto a los visualizados en pantalla."
-            };
+            var terms = _settingService.GetTerms(settings);
 
             foreach (var term in terms)
             {
-                p = section.AddParagraph($"•  {term}");
+                var resolved = _settingService.ResolveTermPlaceholders(term, quote, settings);
+                p = section.AddParagraph($"•  {resolved}");
                 p.Style = "TermsBody";
                 p.Format.LeftIndent = Unit.FromCentimeter(0.5);
                 p.Format.SpaceAfter = Unit.FromPoint(2);
@@ -423,7 +452,7 @@ namespace SistemaCotizaciones.Services
 
         #region Footer
 
-        private void AddFooter(Section section)
+        private void AddFooter(Section section, AppSetting settings)
         {
             var p = section.AddParagraph();
             p.Format.SpaceBefore = Unit.FromCentimeter(1.5);
@@ -438,7 +467,15 @@ namespace SistemaCotizaciones.Services
 
             var row = table.AddRow();
 
-            p = row.Cells[0].AddParagraph("CUBO Signs — Mexicali, B.C.");
+            var footerLeft = settings.CompanyName;
+            if (!string.IsNullOrWhiteSpace(settings.City))
+            {
+                // Extract just the city name (before first comma if present)
+                var cityShort = settings.City.Split(',')[0].Trim();
+                footerLeft += $" — {cityShort}";
+            }
+
+            p = row.Cells[0].AddParagraph(footerLeft);
             p.Style = "Footer";
 
             p = row.Cells[1].AddParagraph($"Generado: {DateTime.Now:dd/MM/yyyy HH:mm}");
@@ -449,6 +486,24 @@ namespace SistemaCotizaciones.Services
         #endregion
 
         #region Logo Helper
+
+        /// <summary>
+        /// Resolves the logo to a temp file path. Uses custom logo if set, otherwise embedded resource.
+        /// </summary>
+        private static string? ResolveLogo(AppSetting settings)
+        {
+            // Try custom logo first
+            if (!string.IsNullOrEmpty(settings.LogoPath) && File.Exists(settings.LogoPath))
+            {
+                var tempPath = Path.Combine(Path.GetTempPath(),
+                    $"cubosigns_logo_{Guid.NewGuid():N}{Path.GetExtension(settings.LogoPath)}");
+                File.Copy(settings.LogoPath, tempPath, overwrite: true);
+                return tempPath;
+            }
+
+            // Fall back to embedded resource
+            return ExtractLogoToTempFile();
+        }
 
         private static string? ExtractLogoToTempFile()
         {
