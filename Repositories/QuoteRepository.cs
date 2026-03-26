@@ -91,5 +91,30 @@ namespace SistemaCotizaciones.Repositories
                 .Take(limit)
                 .ToList();
         }
+
+        // ── Report queries ──
+
+        public List<Quote> GetByDateRange(DateTime start, DateTime end)
+        {
+            using var db = new AppDbContext();
+            return db.Quotes.AsNoTracking()
+                .Include(q => q.Cliente)
+                .Where(q => q.Date >= start && q.Date <= end)
+                .OrderBy(q => q.Date)
+                .ToList();
+        }
+
+        public List<(int Year, int Month, int Count, decimal Total)> GetMonthlyTotals(DateTime start, DateTime end)
+        {
+            using var db = new AppDbContext();
+            return db.Quotes.AsNoTracking()
+                .Where(q => q.Date >= start && q.Date <= end)
+                .GroupBy(q => new { q.Date.Year, q.Date.Month })
+                .Select(g => new { g.Key.Year, g.Key.Month, Count = g.Count(), Total = g.Sum(q => q.Total) })
+                .OrderBy(g => g.Year).ThenBy(g => g.Month)
+                .AsEnumerable()
+                .Select(g => (g.Year, g.Month, g.Count, g.Total))
+                .ToList();
+        }
     }
 }

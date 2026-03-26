@@ -40,5 +40,17 @@ namespace SistemaCotizaciones.Repositories
                 db.SaveChanges();
             }
         }
+
+        // ── Report queries ──
+
+        public List<QuoteItem> GetItemsWithProductByDateRange(DateTime start, DateTime end)
+        {
+            using var db = new AppDbContext();
+            return db.QuoteItems.AsNoTracking()
+                .Include(i => i.Product)
+                .Include(i => i.Quote)
+                .Where(i => i.Quote.Date >= start && i.Quote.Date <= end)
+                .ToList();
+        }
     }
 }

@@ -29,6 +29,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.*" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.*" />
     <PackageReference Include="PdfSharp.MigraDoc.Standard" Version="1.51.15" />
+    <PackageReference Include="ScottPlot.WinForms" Version="5.0.*" />
     <PackageReference Include="Velopack" Version="0.0.1535-gb21da2a" />
   </ItemGroup>
 
