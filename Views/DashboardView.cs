@@ -243,7 +243,9 @@ namespace SistemaCotizaciones.Views
             var btn = new Button
             {
                 Text = text,
-                Size = new Size(140, 50),
+                AutoSize = true,
+                MinimumSize = new Size(100, 50),
+                MaximumSize = new Size(200, 50),
                 Margin = new Padding(0, 0, AppTheme.SpaceSM, 0)
             };
             AppTheme.StyleCardButton(btn, emoji);

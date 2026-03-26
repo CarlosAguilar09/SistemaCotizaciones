@@ -165,11 +165,18 @@ namespace SistemaCotizaciones.Views
             var sep1 = AppTheme.CreateSeparator();
 
             // Assemble (order: Fill first, then bottom-to-top docked)
+            var (buttonBar, _, rightFlow) = AppTheme.CreateButtonBar();
+            var btnBack = AppTheme.CreateButton("Volver", AppTheme.ButtonWidthSM);
+            AppTheme.StyleSecondaryButton(btnBack);
+            btnBack.Click += (s, e) => _navigator.GoBack();
+            rightFlow.Controls.Add(btnBack);
+
             Controls.Add(_contentPanel);
             Controls.Add(AppTheme.CreateSeparator());
             Controls.Add(dateToolbar);
             Controls.Add(sep1);
             Controls.Add(tabToolbar);
+            Controls.Add(buttonBar);
         }
 
         private Panel BuildTabToolbar()
